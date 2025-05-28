@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "headspace (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "headspace (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

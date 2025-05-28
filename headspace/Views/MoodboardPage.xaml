@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="headspace.Views.MoodboardPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="using:headspace.Views"
+    xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <ComboBox x:Name="ColorPicker" Width="100" SelectionChanged="ColorPicker_SelectionChanged">
+                <ComboBoxItem Content="Red" Tag="Red" />
+                <ComboBoxItem Content="Orange" Tag="Orange" />
+                <ComboBoxItem Content="Yellow" Tag="Yellow" />
+                <ComboBoxItem Content="Green" Tag="Green" />
+                <ComboBoxItem Content="Blue" Tag="Blue" />
+                <ComboBoxItem Content="Indigo" Tag="Indigo" />
+                <ComboBoxItem Content="Violet" Tag="Violet" />
+                <ComboBoxItem Content="White" Tag="White" />
+                <ComboBoxItem Content="Black" Tag="Black" />
+            </ComboBox>
+
+            <ComboBox x:Name="ThicknessPicker" Width="100" SelectionChanged="ThicknessPicker_SelectionChanged">
+                <ComboBoxItem Content="1" Tag="1" />
+                <ComboBoxItem Content="3" Tag="3" />
+                <ComboBoxItem Content="5" Tag="5" />
+                <ComboBoxItem Content="10" Tag="10" />
+            </ComboBox>
+        </StackPanel>
+
+        <!-- Drawing Area -->
+        <canvas:CanvasControl
+            x:Name="DrawingCanvas"
+            Grid.Row="1"
+            ClearColor="White"
+            Draw="DrawingCanvas_Draw"
+            PointerPressed="DrawingCanvas_PointerPressed"
+            PointerMoved="DrawingCanvas_PointerMoved"
+            PointerReleased="DrawingCanvas_PointerReleased" />
+    </Grid>
+</Page>

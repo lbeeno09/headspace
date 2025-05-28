@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="headspace.Views.NotesPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls"
+    xmlns:local="using:headspace.Views"
+    xmlns:vm="using:headspace.ViewModels"
+    xmlns:wv2 ="using:Microsoft.Web.WebView2.Core"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Page.DataContext>
+        <vm:NotesViewModel x:Name="ViewModelContext" />
+    </Page.DataContext>
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="3*" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        
+        <!-- Note List -->
+        <ListBox
+            Grid.Column="0"
+            DisplayMemberPath="Title"
+            ItemsSource="{Binding Notes}"
+            SelectedItem="{Binding SelectedNote, Mode=TwoWay}"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch" />
+        
+        <!-- Markdown Editor -->
+        <TextBox
+            Grid.Column="1"
+            AcceptsReturn="True"
+            Text="{Binding SelectedNote.Content, Mode=TwoWay}"
+            TextWrapping="Wrap" 
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch" />
+        
+        <!-- Markdown Preview -->
+        <WebView2 
+            Grid.Column="2"
+            x:Name="MarkdownPreview"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch" />
+    </Grid>
+</Page>
