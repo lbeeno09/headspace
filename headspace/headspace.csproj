@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -15,7 +15,8 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
   <ItemGroup>
-    <Content Remove="Assets\js\verovio\index.html" />
+    <Content Remove="Assets\MusicSamples\example.musicxml" />
+    <Content Remove="Assets\verovio\index.html" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Views\DocumentsPage.xaml" />
@@ -29,6 +30,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Assets\verovio\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Assets\SplashScreen.scale-200.png" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
     <Content Include="Assets\Square150x150Logo.scale-200.png" />
@@ -59,7 +63,6 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250513003" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Assets\MusicSamples\" />
     <Folder Include="Services\" />
   </ItemGroup>
   <ItemGroup>

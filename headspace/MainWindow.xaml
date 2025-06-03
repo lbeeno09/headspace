@@ -22,6 +22,7 @@
                 <MenuFlyoutItem Text="New" />
                 <MenuFlyoutItem Text="Open..." />
                 <MenuFlyoutItem Text="Save" />
+                <MenuFlyoutItem Text="Save As..." Click="SaveAsMenuItem_Click" />
                 <MenuFlyoutSeparator />
                 <MenuFlyoutItem Text="Exit" />
             </MenuBarItem>
@@ -49,23 +50,20 @@
         <NavigationView
             Grid.Row="1"
             x:Name="RootNavigationView"
-            ItemInvoked="NavView_ItemInvoked"
             IsBackButtonVisible="Collapsed"
-            IsPaneOpen="False"
-            IsPaneToggleButtonVisible="True"
             IsSettingsVisible="False"
-            Loaded="NavView_Loaded"
-            PaneDisplayMode="Top">
+            PaneDisplayMode="Top"
+            SelectionChanged="NavigationView_SelectionChanged">
 
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Home" Tag="HomePage" Icon="Home" />
                 <NavigationViewItem Content="Notes" Tag="NotesPage" Icon="Page" />
                 <NavigationViewItem Content="Documents" Tag="DocumentsPage" Icon="Document" />
-                <NavigationViewItem Content="Screen Play" Tag="ScreenplayPage" Icon="Document" />
+                <NavigationViewItem Content="Screenplay" Tag="ScreenplayPage" Icon="Document" />
                 <NavigationViewItem Content="Drawings" Tag="DrawingsPage" Icon="Edit" />
                 <NavigationViewItem Content="Moodboard" Tag="MoodboardPage" Icon="Bookmarks" />
                 <NavigationViewItem Content="Storyboard" Tag="StoryboardPage" Icon="PhoneBook" />
-                <NavigationViewItem Content="Music" Tag="MusicPage" Icon="MusicInfo" />
+                <!-- <NavigationViewItem Content="Music" Tag="MusicPage" Icon="MusicInfo" /> -->
             </NavigationView.MenuItems>
         </NavigationView>
 

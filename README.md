@@ -23,3 +23,13 @@ A idea board maily for collages of various images
 
 - Storyboard
 Art Direction for visual story direction
+
+# Future
+- Differentiate Document and Screenplay
+	- Document: General typing component
+	- Screenplay: Subset of Document to fit for screenplays
+
+- Differentiate Drawing, Moodboard, and Storyboard
+	- Drawing: General drawing component
+	- Moodboard: Collage focused drawing
+	- Storyboard: Storyboard focused drawing

@@ -1,61 +1,79 @@
 using headspace.Views;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
 namespace headspace
 {
     public sealed partial class MainWindow : Window
     {
+        private readonly HomePage homePage = new();
+        private readonly NotesPage notesPage = new();
+        private readonly DocumentsPage documentsPage = new();
+        private readonly ScreenplayPage screenplayPage = new();
+        private readonly DrawingsPage drawingsPage = new();
+        private readonly MoodboardPage moodboardPage = new();
+        private readonly StoryboardPage storyboardPage = new();
+        //private readonly MusicsPage musicsPage;
+
+        private object currentPage = null;
+
         public MainWindow()
         {
             this.InitializeComponent();
-            ContentFrame.Navigate(typeof(HomePage));
+
+            RootNavigationView.SelectedItem = RootNavigationView.MenuItems[0];
+            ContentFrame.Content = homePage;
+            currentPage = homePage;
         }
 
-        private void NavView_Loaded(object sender, RoutedEventArgs e)
+        private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
-            RootNavigationView.IsPaneOpen = false;
+            string selectedTag = (args.SelectedItem as NavigationViewItem)?.Tag?.ToString();
 
-            ContentFrame.Navigate(typeof(HomePage));
+            object targetPage = selectedTag switch
+            {
+                "HomePage" => homePage,
+                "NotesPage" => notesPage,
+                "DocumentsPage" => documentsPage,
+                "ScreenplayPage" => screenplayPage,
+                "DrawingsPage" => drawingsPage,
+                "MoodboardPage" => moodboardPage,
+                "StoryboardPage" => storyboardPage,
+                // "MusicsPage" => musicPage,
+                _ => null
+            };
+
+            if(targetPage != null && targetPage != currentPage)
+            {
+                currentPage = targetPage;
+                ContentFrame.Content = targetPage;
+            }
         }
 
-        private void NavView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
+        private async void SaveAsMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            string pageName = args.InvokedItemContainer?.Tag?.ToString();
-            if(pageName is null)
-            {
-                return;
-            }
+            var picker = new FileSavePicker();
+            picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+            picker.FileTypeChoices.Add("Head Space", new List<string>() { ".hsp" });
+            picker.SuggestedFileName = "Untitled";
 
-            switch(pageName)
-            {
-                case "HomePage":
-                    ContentFrame.Navigate(typeof(HomePage));
-                    break;
-                case "NotesPage":
-                    ContentFrame.Navigate(typeof(NotesPage));
-                    break;
-                case "DocumentsPage":
-                    ContentFrame.Navigate(typeof(DocumentsPage));
-                    break;
-                case "ScreenplayPage":
-                    ContentFrame.Navigate(typeof(ScreenplayPage));
-                    break;
-                case "DrawingsPage":
-                    ContentFrame.Navigate(typeof(DrawingsPage));
-                    break;
-                case "MoodboardPage":
-                    ContentFrame.Navigate(typeof(MoodboardPage));
-                    break;
-                case "StoryboardPage":
-                    ContentFrame.Navigate(typeof(StoryboardPage));
-                    break;
-                case "MusicPage":
-                    ContentFrame.Navigate(typeof(MusicPage));
-                    break;
-            }
+            // Associate picker with app window
+            IntPtr hwnd = WindowNative.GetWindowHandle(this);
+            InitializeWithWindow.Initialize(picker, hwnd);
 
-            RootNavigationView.IsPaneOpen = false;
+            var file = await picker.PickSaveFileAsync();
+            if(file != null)
+            {
+                // TODO: Save project here
+                using var stream = await file.OpenStreamForWriteAsync();
+                using var writer = new StreamWriter(stream);
+                writer.Write("Project data goes here.");
+            }
         }
     }
 }

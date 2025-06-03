@@ -1,99 +1,119 @@
-using Microsoft.Graphics.Canvas.UI.Xaml;
+using headspace.Models;
+using headspace.ViewModels;
 using Microsoft.UI;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Shapes;
 using System.Collections.Generic;
-using System.Numerics;
-using Windows.UI;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using System.ComponentModel;
+using Windows.Foundation;
 
 namespace headspace.Views
 {
-    /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
-    /// </summary>
     public sealed partial class MoodboardPage : Page
     {
-        private record struct Stroke(Vector2 Start, Vector2 End, Color Color, float Thickness);
-        private List<Stroke> strokes = new();
-        private Vector2? previousPoint = null;
         private bool isDrawing = false;
-        private Color currentColor = Colors.Black;
-        private float currentThickness = 1.0f;
+        private Polyline? currentStroke;
+        private List<Point> points = new();
 
         public MoodboardPage()
         {
             this.InitializeComponent();
 
-            ColorPicker.SelectedIndex = 0;
-            ThicknessPicker.SelectedIndex = 0;
+            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         }
 
-        private void DrawingCanvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
+        private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            foreach (var stroke in strokes)
+            if(e.PropertyName == nameof(ViewModel.SelectedMoodboard))
             {
-                args.DrawingSession.DrawLine(stroke.Start, stroke.End, stroke.Color, stroke.Thickness);
+                RedrawCanvas();
             }
         }
 
-        private void DrawingCanvas_PointerPressed(object sender, PointerRoutedEventArgs e)
+        private void RedrawCanvas()
         {
-            isDrawing = true;
-
-            var point = e.GetCurrentPoint(DrawingCanvas).Position;
-            previousPoint = new Vector2((float)point.X, (float)point.Y);
-        }
-
-        private void DrawingCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
-        {
-            if (!isDrawing || !e.GetCurrentPoint(DrawingCanvas).IsInContact)
+            DrawingCanvas.Children.Clear();
+            if(ViewModel.SelectedMoodboard == null)
             {
                 return;
             }
 
-            var point = e.GetCurrentPoint(DrawingCanvas).Position;
-            Vector2 current = new((float)point.X, (float)point.Y);
-
-            if (previousPoint is Vector2 start)
+            foreach(var stroke in ViewModel.SelectedMoodboard.Strokes)
             {
-                strokes.Add(new Stroke(start, current, currentColor, currentThickness));
-                previousPoint = current;
-                DrawingCanvas.Invalidate();
+                var polyline = new Polyline
+                {
+                    Stroke = new SolidColorBrush(stroke.Color),
+                    StrokeThickness = stroke.Thickness
+                };
+                foreach(var pt in stroke.Points)
+                {
+                    polyline.Points.Add(pt);
+                }
+                DrawingCanvas.Children.Add(polyline);
             }
         }
 
-
-        private void DrawingCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
+        private void Canvas_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
-            isDrawing = false;
-            previousPoint = null;
-        }
-
-        private void ColorPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            var tag = ((ComboBoxItem)ColorPicker.SelectedItem).Tag.ToString();
-            currentColor = tag switch
+            if(ViewModel.SelectedMoodboard == null)
             {
-                "Red" => Colors.Red,
-                "Orange" => Colors.Orange,
-                "Yellow" => Colors.Yellow,
-                "Green" => Colors.Green,
-                "Blue" => Colors.Blue,
-                "Indigo" => Colors.Indigo,
-                "Violet" => Colors.Violet,
-                "White" => Colors.White,
-                "Black" => Colors.Black,
-                _ => Colors.Black,
+                return;
+            }
+
+            isDrawing = true;
+            points.Clear();
+
+            currentStroke = new Polyline
+            {
+                Stroke = new SolidColorBrush(ViewModel.IsEraserMode ? Colors.White : ViewModel.SelectedNamedColor.Color),
+                StrokeThickness = ViewModel.SelectedThickness
             };
+
+            var pos = e.GetCurrentPoint(DrawingCanvas).Position;
+            points.Add(pos);
+            currentStroke.Points.Add(pos);
+
+            DrawingCanvas.Children.Add(currentStroke);
         }
 
-        private void ThicknessPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void Canvas_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
-            var tag = ((ComboBoxItem)ThicknessPicker.SelectedItem).Tag.ToString();
-            currentThickness = float.Parse(tag);
+            if(!isDrawing || currentStroke == null)
+            {
+                return;
+            }
+
+            var pos = e.GetCurrentPoint(DrawingCanvas).Position;
+            points.Add(pos);
+            currentStroke.Points.Add(pos);
+        }
+
+        private void Canvas_PointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+            if(!isDrawing || ViewModel.SelectedMoodboard == null || points.Count < 2)
+            {
+                return;
+            }
+
+            ViewModel.SelectedMoodboard.Strokes.Add(new StrokeData
+            {
+                Points = new List<Point>(points),
+                Color = ViewModel.IsEraserMode ? Colors.White : ViewModel.SelectedNamedColor.Color,
+                Thickness = ViewModel.SelectedThickness
+            });
+
+            isDrawing = false;
+        }
+
+        private void RenameButton_Click(object sender, RoutedEventArgs e)
+        {
+            if(DataContext is MoodboardViewModel viewModel)
+            {
+                _ = viewModel.RenameMoodboardAsync(this.XamlRoot);
+            }
         }
     }
 }

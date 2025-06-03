@@ -1,22 +1,19 @@
+using headspace.ViewModels;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using System.ComponentModel;
 using Windows.System;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace headspace.Views
 {
-    /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
-    /// </summary>
     public sealed partial class ScreenplayPage : Page
     {
         public ScreenplayPage()
         {
             InitializeComponent();
+            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         }
 
         private void BoldButton_Click(object sender, RoutedEventArgs e)
@@ -36,11 +33,31 @@ namespace headspace.Views
 
         private void Editor_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key == VirtualKey.Tab)
+            if(e.Key == VirtualKey.Tab)
             {
                 Editor.Document.Selection.TypeText("\t");
                 e.Handled = true;
             }
         }
+
+        private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if(e.PropertyName == nameof(ViewModel.SelectedScreenplay))
+            {
+                if(ViewModel.SelectedScreenplay != null)
+                {
+                    Editor.Document.SetText(TextSetOptions.FormatRtf, ViewModel.SelectedScreenplay.Content);
+                }
+            }
+        }
+
+        private void RenameButton_Click(object sender, RoutedEventArgs e)
+        {
+            if(DataContext is ScreenplayViewModel viewModel)
+            {
+                _ = viewModel.RenameScreenplayAsync(this.XamlRoot);
+            }
+        }
+
     }
 }

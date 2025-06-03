@@ -6,46 +6,82 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="using:headspace.Views"
+    xmlns:vm="using:headspace.ViewModels"
     xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
+    <Page.DataContext>
+        <vm:StoryboardViewModel x:Name="ViewModel" />
+    </Page.DataContext>
+
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="2" />
+            <ColumnDefinition Width="4*" />
+        </Grid.ColumnDefinitions>
 
-        <!-- Toolbar -->
-        <StackPanel Orientation="Horizontal" Spacing="10">
-            <ComboBox x:Name="ColorPicker" Width="100" SelectionChanged="ColorPicker_SelectionChanged">
-                <ComboBoxItem Content="Red" Tag="Red" />
-                <ComboBoxItem Content="Orange" Tag="Orange" />
-                <ComboBoxItem Content="Yellow" Tag="Yellow" />
-                <ComboBoxItem Content="Green" Tag="Green" />
-                <ComboBoxItem Content="Blue" Tag="Blue" />
-                <ComboBoxItem Content="Indigo" Tag="Indigo" />
-                <ComboBoxItem Content="Violet" Tag="Violet" />
-                <ComboBoxItem Content="White" Tag="White" />
-                <ComboBoxItem Content="Black" Tag="Black" />
-            </ComboBox>
+        <!-- Storyboard List -->
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-            <ComboBox x:Name="ThicknessPicker" Width="100" SelectionChanged="ThicknessPicker_SelectionChanged">
-                <ComboBoxItem Content="1" Tag="1" />
-                <ComboBoxItem Content="3" Tag="3" />
-                <ComboBoxItem Content="5" Tag="5" />
-                <ComboBoxItem Content="10" Tag="10" />
-            </ComboBox>
-        </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button Command="{Binding AddStoryboardCommand}">
+                    <SymbolIcon Symbol="Add" />
+                </Button>
+                <Button Command="{Binding DeleteStoryboardCommand}">
+                    <SymbolIcon Symbol="Remove" />
+                </Button>
+                <Button Click="RenameButton_Click">
+                    <SymbolIcon Symbol="Rename" />
+                </Button>
+            </StackPanel>
 
-        <!-- Drawing Area -->
-        <canvas:CanvasControl
-            x:Name="DrawingCanvas"
-            Grid.Row="1"
-            ClearColor="White"
-            Draw="DrawingCanvas_Draw"
-            PointerPressed="DrawingCanvas_PointerPressed"
-            PointerMoved="DrawingCanvas_PointerMoved"
-            PointerReleased="DrawingCanvas_PointerReleased" />
+            <ListBox
+                Grid.Row="1"
+                ItemsSource="{Binding Storyboards}"
+                SelectedItem="{Binding SelectedStoryboard, Mode=TwoWay}"
+                DisplayMemberPath="Title" />
+        </Grid>
+
+        <Border Grid.Column="1" Width="10" />
+
+        <!-- Main Window -->
+        <Grid Grid.Column="2" >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Toolbar -->
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <ComboBox
+                    ItemsSource="{Binding ColorOptions}"
+                    SelectedValue="{Binding SelectedNamedColor, Mode=TwoWay}" 
+                    Width="100" />
+
+                <Slider
+                    Value="{Binding SelectedThickness, Mode=TwoWay}"
+                    Width="100"
+                    Minimum="1" Maximum="10" />
+
+                <ToggleButton
+                    Content="Eraser"
+                    IsChecked="{Binding IsEraserMode, Mode=TwoWay}" />
+            </StackPanel>
+
+            <!-- Drawing Area -->
+            <Canvas
+                x:Name="DrawingCanvas"
+                Grid.Row="1"
+                Background="White"
+                PointerPressed="Canvas_PointerPressed"
+                PointerMoved="Canvas_PointerMoved"
+                PointerReleased="Canvas_PointerReleased" />
+        </Grid>
     </Grid>
 </Page>
