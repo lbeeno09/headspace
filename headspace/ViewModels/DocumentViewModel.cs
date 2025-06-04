@@ -15,10 +15,17 @@ namespace headspace.ViewModels
         public ObservableCollection<DocumentItem> Documents { get; } = new();
 
         [ObservableProperty]
-        private DocumentItem selectedDocument;
+        private DocumentItem? selectedDocument;
+
+        public bool IsItemSelected => SelectedDocument is not null;
 
         public DocumentViewModel()
         {
+        }
+
+        partial void OnSelectedDocumentChanged(DocumentItem? value)
+        {
+            OnPropertyChanged(nameof(IsItemSelected));
         }
 
         [RelayCommand]

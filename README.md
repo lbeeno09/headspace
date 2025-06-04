@@ -25,11 +25,31 @@ A idea board maily for collages of various images
 Art Direction for visual story direction
 
 # Future
-- Differentiate Document and Screenplay
-	- Document: General typing component
-	- Screenplay: Subset of Document to fit for screenplays
+- General 
+	- Shortcuts
+	- Save/load
+	- Increase menubar style
 
-- Differentiate Drawing, Moodboard, and Storyboard
-	- Drawing: General drawing component
-	- Moodboard: Collage focused drawing
-	- Storyboard: Storyboard focused drawing
+- Notes
+	- (Maybe) Add Syntax Highlighting
+	
+- Documents
+	- Word like toolbar
+	- Adjustable Document size
+
+- Screenplay
+	- tab/enter to move between modes
+
+- Drawing
+	- Image pasting
+	- Resizable
+
+- Moodboard
+	- Image pasting
+	- Resizable
+
+- Storyboard
+	- Image pasting
+	- Resizable
+	- Storyboard squares
+	- Multiple pages (maybe timeline on bottom)

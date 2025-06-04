@@ -15,10 +15,17 @@ namespace headspace.ViewModels
         public ObservableCollection<ScreenplayItem> Screenplays { get; } = new();
 
         [ObservableProperty]
-        private ScreenplayItem selectedScreenplay;
+        private ScreenplayItem? selectedScreenplay;
+
+        public bool IsItemSelected => SelectedScreenplay is not null;
 
         public ScreenplayViewModel()
         {
+        }
+
+        partial void OnSelectedScreenplayChanged(ScreenplayItem? value)
+        {
+            OnPropertyChanged(nameof(IsItemSelected));
         }
 
         [RelayCommand]

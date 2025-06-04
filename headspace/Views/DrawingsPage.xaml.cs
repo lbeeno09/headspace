@@ -1,6 +1,7 @@
 using headspace.Models;
 using headspace.ViewModels;
 using Microsoft.UI;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -9,19 +10,27 @@ using Microsoft.UI.Xaml.Shapes;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Windows.Foundation;
+using Windows.UI;
+using Windows.System;
+using Windows.UI.Core;
+using System.Threading.Tasks;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace headspace.Views
 {
     public sealed partial class DrawingsPage : Page
     {
         private bool isDrawing = false;
+        private PointerUpdateKind currentButton;
         private Polyline? currentStroke;
-        private List<Point> points = new();
+        private List<Point> currentStrokePoints = new();
+        private Color currentColor;
 
         public DrawingsPage()
         {
             this.InitializeComponent();
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+            DrawingCanvas.Focus(FocusState.Programmatic);
         }
 
         private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -62,20 +71,38 @@ namespace headspace.Views
                 return;
             }
 
-            isDrawing = true;
-            points.Clear();
-
-            currentStroke = new Polyline
+            var point = e.GetCurrentPoint(DrawingCanvas);
+            if(!isDrawing)
             {
-                Stroke = new SolidColorBrush(ViewModel.IsEraserMode ? Colors.White : ViewModel.SelectedNamedColor.Color),
-                StrokeThickness = ViewModel.SelectedThickness
-            };
+                if(point.Properties.IsLeftButtonPressed)
+                {
+                    isDrawing = true;
+                    currentButton = PointerUpdateKind.LeftButtonPressed;
+                    currentColor = ViewModel.ColorOptions[ViewModel.SelectedPrimaryColor];
+                }
+                else if (point.Properties.IsRightButtonPressed)
+                {
+                    isDrawing = true;
+                    currentButton = PointerUpdateKind.RightButtonPressed;
+                    currentColor = ViewModel.ColorOptions[ViewModel.SelectedSecondaryColor];
+                }
 
-            var pos = e.GetCurrentPoint(DrawingCanvas).Position;
-            points.Add(pos);
-            currentStroke.Points.Add(pos);
+                if(isDrawing)
+                {
+                    currentStrokePoints.Clear();
 
-            DrawingCanvas.Children.Add(currentStroke);
+                    currentStroke = new Polyline
+                    {
+                        Stroke = new SolidColorBrush(ViewModel.IsEraserMode ? Colors.White : currentColor),
+                        StrokeThickness = ViewModel.SelectedThickness
+                    };
+                    var pos = e.GetCurrentPoint(DrawingCanvas).Position;
+                    currentStrokePoints.Add(pos);
+                    currentStroke.Points.Add(pos);
+
+                    DrawingCanvas.Children.Add(currentStroke);
+                }
+            }
         }
 
         private void Canvas_PointerMoved(object sender, PointerRoutedEventArgs e)
@@ -85,27 +112,43 @@ namespace headspace.Views
                 return;
             }
 
-            var pos = e.GetCurrentPoint(DrawingCanvas).Position;
-            points.Add(pos);
-            currentStroke.Points.Add(pos);
+            var point = e.GetCurrentPoint(DrawingCanvas);
+            bool shouldDraw = currentButton switch
+            {
+                PointerUpdateKind.LeftButtonPressed => point.Properties.IsLeftButtonPressed,
+                PointerUpdateKind.RightButtonPressed => point.Properties.IsRightButtonPressed,
+                _ => false
+            };
+
+            if(shouldDraw)
+            {
+                var pos = e.GetCurrentPoint(DrawingCanvas).Position;
+                currentStrokePoints.Add(pos);
+                currentStroke.Points.Add(pos);
+            }
         }
 
 
         private void Canvas_PointerReleased(object sender, PointerRoutedEventArgs e)
         {
-            if(!isDrawing || ViewModel.SelectedDrawing == null || points.Count < 2)
+            if(!isDrawing || ViewModel.SelectedDrawing == null)
             {
                 return;
             }
-
-            ViewModel.SelectedDrawing.Strokes.Add(new StrokeData
-            {
-                Points = new List<Point>(points),
-                Color = ViewModel.IsEraserMode ? Colors.White : ViewModel.SelectedNamedColor.Color,
-                Thickness = ViewModel.SelectedThickness
-            });
-
             isDrawing = false;
+
+            if(currentStrokePoints.Count >= 1)
+            {
+                var stroke = new StrokeData
+                {
+                    Points = new List<Point>(currentStrokePoints),
+                    Color = ViewModel.IsEraserMode ? Colors.White : currentColor,
+                    Thickness = ViewModel.SelectedThickness
+                };
+                ViewModel.SelectedDrawing.Strokes.Add(stroke);
+            }
+
+            currentStrokePoints.Clear();
         }
 
         private void RenameButton_Click(object sender, RoutedEventArgs e)
@@ -115,5 +158,17 @@ namespace headspace.Views
                 _ = viewModel.RenameDrawingAsync(this.XamlRoot);
             }
         }
+
+        private async void DrawingCanvas_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if(e.Key == VirtualKey.V && Window.Current.CoreWindow.GetKeyState(VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down))
+            {
+                //await PasteFromClipboardAsync();
+            }
+        }
+
+        //private async Task PasteFromClipboardAsync()
+        //{
+        //}
     }
 }

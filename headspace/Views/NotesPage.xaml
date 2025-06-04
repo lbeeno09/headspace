@@ -53,7 +53,7 @@
         <Border Grid.Column="1" Width="10" />
 
         <!-- Markdown Editor -->
-        <TextBox
+        <TextBox IsEnabled="{Binding IsItemSelected}"
             Grid.Column="2"
             AcceptsReturn="True"
             Text="{Binding SelectedNote.Content, Mode=TwoWay}"
@@ -63,7 +63,7 @@
             VerticalAlignment="Stretch" />
         
         <!-- Markdown Preview -->
-        <WebView2 
+        <WebView2
             Grid.Column="3"
             x:Name="MarkdownPreview"
             HorizontalAlignment="Stretch"

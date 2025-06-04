@@ -76,6 +76,7 @@
                         BorderThickness="1">
                         <RichEditBox
                             x:Name="Editor"                            
+                            IsEnabled="{Binding IsItemSelected}"
                             AcceptsReturn="True"
                             TextWrapping="Wrap"
                             VerticalAlignment="Stretch"

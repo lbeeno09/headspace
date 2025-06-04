@@ -15,21 +15,21 @@ namespace headspace.ViewModels
         public ObservableCollection<NoteItem> Notes { get; } = new();
 
         [ObservableProperty]
-        private NoteItem selectedNote;
+        private NoteItem? selectedNote;
 
         [ObservableProperty]
-        private string markdownHtml;
+        private string? markdownHtml;
+
+        public bool IsItemSelected => SelectedNote is not null && Notes.Any();
 
         public NoteViewModel()
         {
         }
 
-        partial void OnSelectedNoteChanged(NoteItem value)
+        partial void OnSelectedNoteChanged(NoteItem? value)
         {
-            if(value != null)
-            {
-                MarkdownHtml = Markdig.Markdown.ToHtml(value.Content ?? "");
-            }
+            OnPropertyChanged(nameof(IsItemSelected));
+            MarkdownHtml = Markdig.Markdown.ToHtml(value?.Content ?? "");
         }
 
         public void UpdateMarkdown(string newText)
@@ -65,6 +65,7 @@ namespace headspace.ViewModels
             if(SelectedNote != null)
             {
                 Notes.Remove(SelectedNote);
+                UpdateMarkdown("");
             }
         }
 

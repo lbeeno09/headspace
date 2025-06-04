@@ -15,39 +15,41 @@ namespace headspace.ViewModels
 {
     public partial class StoryboardViewModel : ObservableObject
     {
-        public List<NamedColor> ColorOptions { get; } = new()
+        public Dictionary<string, Color> ColorOptions { get; } = new()
         {
-            new NamedColor { Name = "Red", Color = Colors.Red },
-            new NamedColor { Name = "Orange", Color = Colors.Orange },
-            new NamedColor { Name = "Yellow", Color = Colors.Yellow },
-            new NamedColor { Name = "Green", Color = Colors.Green },
-            new NamedColor { Name = "Blue", Color = Colors.Blue },
-            new NamedColor { Name = "Indigo", Color = Colors.Indigo },
-            new NamedColor { Name = "Violet", Color = Colors.Violet },
-            new NamedColor { Name = "Black", Color = Colors.Black },
-            new NamedColor { Name = "White", Color = Colors.White }
+            { "Red", Colors.Red },
+            { "Orange", Colors.Orange },
+            { "Yellow",Colors.Yellow },
+            { "Green", Colors.Green },
+            { "Blue", Colors.Blue },
+            { "Indigo", Colors.Indigo },
+            { "Violet", Colors.Violet },
+            { "Black", Colors.Black },
+            { "White", Colors.White }
         };
 
         public ObservableCollection<StoryboardItem> Storyboards { get; } = new();
 
         [ObservableProperty]
-        private StoryboardItem selectedStoryboard;
+        private StoryboardItem? selectedStoryboard;
 
         [ObservableProperty]
-        private Color selectedColor = Colors.Black;
+        private string selectedPrimaryColor;
+        [ObservableProperty]
+        private string selectedSecondaryColor;
 
         [ObservableProperty]
-        private NamedColor selectedNamedColor;
-
-        [ObservableProperty]
-        private double selectedThickness = 2.0;
+        private double selectedThickness;
 
         [ObservableProperty]
         private bool isEraserMode;
 
         public StoryboardViewModel()
         {
-            SelectedNamedColor = ColorOptions[0];
+            SelectedPrimaryColor = "Black";
+            SelectedSecondaryColor = "White";
+            SelectedThickness = 2.0;
+            IsEraserMode = false;
         }
 
         [RelayCommand]

@@ -76,11 +76,14 @@
                         BorderThickness="1">
                         <RichEditBox
                             x:Name="Editor"                            
+                            IsEnabled="{Binding IsItemSelected}"
                             AcceptsReturn="True"
                             TextWrapping="Wrap"
                             VerticalAlignment="Stretch"
                             HorizontalAlignment="Stretch"
                             BorderThickness="0"
+                            FontFamily="Courier New"
+                            FontSize="12"
                             KeyDown="Editor_KeyDown">
                             <RichEditBox.Resources>
                                 <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent" />

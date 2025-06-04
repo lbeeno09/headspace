@@ -59,8 +59,12 @@
             <!-- Toolbar -->
             <StackPanel Orientation="Horizontal" Spacing="10">
                 <ComboBox
-                    ItemsSource="{Binding ColorOptions}"
-                    SelectedValue="{Binding SelectedNamedColor, Mode=TwoWay}" 
+                    ItemsSource="{Binding ColorOptions.Keys}"
+                    SelectedValue="{Binding SelectedPrimaryColor, Mode=TwoWay}" 
+                    Width="100" />
+                <ComboBox
+                    ItemsSource="{Binding ColorOptions.Keys}"
+                    SelectedValue="{Binding SelectedSecondaryColor, Mode=TwoWay}" 
                     Width="100" />
 
                 <Slider
@@ -80,7 +84,9 @@
                 Background="White"
                 PointerPressed="Canvas_PointerPressed"
                 PointerMoved="Canvas_PointerMoved"
-                PointerReleased="Canvas_PointerReleased" />
+                PointerReleased="Canvas_PointerReleased" 
+                AllowDrop="True"
+                KeyDown="DrawingCanvas_KeyDown" />
         </Grid>
     </Grid>
 </Page>

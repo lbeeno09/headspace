@@ -1,9 +1,12 @@
 using headspace.Views;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 
@@ -25,14 +28,51 @@ namespace headspace
         public MainWindow()
         {
             this.InitializeComponent();
+            ExtendsContentIntoTitleBar = true;
+            SetTitleBar(CustomTitleBar);
 
             RootNavigationView.SelectedItem = RootNavigationView.MenuItems[0];
             ContentFrame.Content = homePage;
             currentPage = homePage;
         }
 
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            if(this.AppWindow.Presenter is OverlappedPresenter presenter)
+            {
+                presenter.Minimize();
+            }
+        }
+
+        private void MaximizeRestore_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.AppWindow.Presenter is OverlappedPresenter presenter)
+            {
+                if(presenter.IsMaximizable)
+                {
+                    presenter.Maximize();
+                } else
+                {
+                    presenter.Restore();
+                }
+            }
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
         private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
+            if(args.IsSettingsSelected)
+            {
+                //currentPage = settingsPage;
+                //ContentFrame.Content = settingsPage;
+
+                //return;
+            }
+
             string selectedTag = (args.SelectedItem as NavigationViewItem)?.Tag?.ToString();
 
             object targetPage = selectedTag switch
@@ -55,6 +95,14 @@ namespace headspace
             }
         }
 
+        private void NavigationView_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if(RootNavigationView.IsPaneOpen)
+            {
+                RootNavigationView.IsPaneOpen = false;
+            }
+        }
+
         private async void SaveAsMenuItem_Click(object sender, RoutedEventArgs e)
         {
             var picker = new FileSavePicker();
@@ -74,6 +122,11 @@ namespace headspace
                 using var writer = new StreamWriter(stream);
                 writer.Write("Project data goes here.");
             }
+        }
+
+        private async void PreferencesMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

@@ -5,14 +5,6 @@ using Windows.UI;
 
 namespace headspace.Models
 {
-    public class NamedColor
-    {
-        public string Name { get; set; }
-        public Color Color { get; set; }
-
-        public override string ToString() => Name;
-    }
-
     public class StrokeData
     {
         public List<Point> Points { get; set; } = new();
