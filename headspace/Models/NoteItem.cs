@@ -1,14 +1,11 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using headspace.Models.Common;
 
 namespace headspace.Models
 {
-    public partial class NoteItem : ObservableObject
+    public partial class NoteItem : ProjectItemBase
     {
         [ObservableProperty]
-        private string title;
-
-        [ObservableProperty]
         private string content;
-
     }
 }

@@ -1,118 +1,60 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using headspace.Models;
+using headspace.ViewModels.Common;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using Microsoft.UI.Xaml.Media;
 using System.Linq;
-using System.Threading.Tasks;
-using Windows.UI;
+using System.Windows.Input;
 
 namespace headspace.ViewModels
 {
     public partial class DrawingViewModel : ObservableObject
     {
-        
-        public Dictionary<string, Color> ColorOptions { get; } = new()
+        public ListItemManagerViewModel<DrawingItem> DrawingListManager { get; }
+
+        public DrawingItem SelectedDrawing => DrawingListManager.SelectedItem;
+
+        [ObservableProperty]
+        private SolidColorBrush primaryColor = new SolidColorBrush(Colors.Black);
+        [ObservableProperty]
+        private SolidColorBrush secondaryColor = new SolidColorBrush(Colors.White);
+        [ObservableProperty]
+        private double strokeThickness = 2.0;
+        [ObservableProperty]
+        private bool isEraserMode = false;
+
+        public ICommand ClearCanvasCommand { get; }
+
+        public XamlRoot PageXamlRoot
         {
-            { "Red", Colors.Red },
-            { "Orange", Colors.Orange },
-            { "Yellow",Colors.Yellow },
-            { "Green", Colors.Green },
-            { "Blue", Colors.Blue },
-            { "Indigo", Colors.Indigo },
-            { "Violet", Colors.Violet },
-            { "Black", Colors.Black },
-            { "White", Colors.White }
-        };
-
-        public ObservableCollection<DrawingItem> Drawings { get; } = new();
-
-        [ObservableProperty]
-        private DrawingItem? selectedDrawing;
-
-        [ObservableProperty]
-        private string selectedPrimaryColor;
-        [ObservableProperty]
-        private string selectedSecondaryColor;
-
-        [ObservableProperty]
-        private double selectedThickness;
-
-        [ObservableProperty]
-        private bool isEraserMode;
+            set
+            {
+                if(value != null)
+                {
+                    DrawingListManager.XamlRoot = value;
+                }
+            }
+        }
 
         public DrawingViewModel()
         {
-            SelectedPrimaryColor = "Black";
-            SelectedSecondaryColor = "White";
-            SelectedThickness = 2.0;
-            IsEraserMode = false;
-        }
-        
-        [RelayCommand]
-        private void AddDrawing()
-        {
-            string baseTitle = "Untitled";
-            string newTitle = baseTitle;
+            DrawingListManager = new ListItemManagerViewModel<DrawingItem>((App.Current as App).CurrentProject.Drawings);
 
-            int i = 1;
-            while(Drawings.Select(n => n.Title).Contains(newTitle))
-            {
-                newTitle = $"{baseTitle}{i++}";
-            }
+            DrawingListManager.SelectedItem = DrawingListManager.Items.FirstOrDefault();
+            DrawingListManager.OnItemSelected += (sender, item) => OnPropertyChanged(nameof(SelectedDrawing));
 
-            var newDrawing = new DrawingItem { Title = newTitle };
-
-            Drawings.Add(newDrawing);
-            SelectedDrawing = newDrawing;
+            ClearCanvasCommand = new RelayCommand(ClearCanvas);
         }
 
-        [RelayCommand]
-        private void DeleteDrawing()
+        private void ClearCanvas()
         {
             if(SelectedDrawing != null)
             {
-                Drawings.Remove(SelectedDrawing);
-            }
-        }
+                SelectedDrawing.Content = "";
 
-        [RelayCommand]
-        public async Task RenameDrawingAsync(XamlRoot xamlRoot)
-        {
-            if(SelectedDrawing == null || xamlRoot == null)
-            {
-                return;
-            }
-
-            var inputDialog = new ContentDialog
-            {
-                Title = "Rename Drawing",
-                Content = new TextBox
-                {
-                    Text = SelectedDrawing.Title,
-                    AcceptsReturn = false,
-                    PlaceholderText = "Enter new title"
-                },
-                PrimaryButtonText = "Rename",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = xamlRoot
-            };
-
-            var result = await inputDialog.ShowAsync();
-
-            if(result == ContentDialogResult.Primary && inputDialog.Content is TextBox textBox)
-            {
-                var newTitle = textBox.Text.Trim();
-
-                if(!string.IsNullOrWhiteSpace(newTitle))
-                {
-                    SelectedDrawing.Title = newTitle;
-                }
+                System.Diagnostics.Debug.WriteLine($"Cleared drawing for: {SelectedDrawing.Title}");
             }
         }
 

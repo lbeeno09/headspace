@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="headspace.Views.MainViewPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:commonModels="using:headspace.Models.Common"
+    xmlns:local="using:headspace.Views"
+    NavigationCacheMode="Enabled"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <DataTemplate x:Key="SidebarButtonTemplate" x:DataType="commonModels:SidebarItem">
+            <Button Click="SidebarNavigationButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                <Grid ColumnDefinitions="Auto,*" HorizontalAlignment="Stretch">
+                    <FontIcon Grid.Column="0" Glyph="{Binding Icon}" Width="28" Height="28" FontFamily="Segoe MDL2 Assets" />
+                    <TextBlock Grid.Column="1" Text="{Binding Name}" HorizontalAlignment="Left" TextAlignment="Left" />
+                </Grid>
+            </Button>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <!-- Menu bar -->
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" x:Name="CustomTitleBar">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <MenuBar Grid.Column="0" HorizontalAlignment="Left">
+                <MenuBarItem Title="File">
+                    <MenuFlyoutItem Text="New" />
+                    <MenuFlyoutItem Text="Open..." Click="OpenProject_Click"/>
+                    <MenuFlyoutItem Text="Save" Click="SaveProject_Click"/>
+                    <MenuFlyoutItem Text="Save As..."  Click="SaveProjectAs_Click" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem Text="Exit" />
+                </MenuBarItem>
+                <MenuBarItem Title="Edit">
+                    <MenuFlyoutItem Text="Undo" />
+                    <MenuFlyoutItem Text="Redo" />
+                    <MenuFlyoutItem Text="Cut" />
+                    <MenuFlyoutItem Text="Copy" />
+                    <MenuFlyoutItem Text="Paste" />
+                </MenuBarItem>
+                <MenuBarItem Title="View">
+                    <MenuFlyoutItem Text="Toggle Sidebar" />
+                </MenuBarItem>
+                <MenuBarItem Title="Help">
+                    <MenuFlyoutItem Text="About" />
+                </MenuBarItem>
+            </MenuBar>
+            <Grid x:Name="AppTitleBar" Grid.Column="1" Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="0"
+                x:Name="SidebarGrid" MinWidth="48" MaxWidth="200"
+                PointerEntered="Sidebar_PointerEntered" PointerExited="Sidebar_PointerExited"
+                HorizontalAlignment="Left" VerticalAlignment="Stretch">
+                <Grid VerticalAlignment="Stretch">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <ItemsControl Grid.Row="0" x:Name="SidebarNavigationItemsControl"
+                                  VerticalAlignment="Stretch"
+                                  ItemTemplate="{StaticResource SidebarButtonTemplate}">
+                    </ItemsControl>
+
+                    <ContentControl Grid.Row="1" x:Name="PreferencesButtonContainer"
+                                    ContentTemplate="{StaticResource SidebarButtonTemplate}">
+                    </ContentControl>
+                </Grid>
+            </Grid>
+
+            <Grid Grid.Column="1">
+                <Frame x:Name="ContentFrame" />
+            </Grid>
+        </Grid>
+    </Grid>
+</Page>

@@ -5,52 +5,30 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:local="using:headspace.Views"
-    xmlns:vm="using:headspace.ViewModels"
     xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
+    xmlns:local="using:headspace.Views"
+    xmlns:commonViews="using:headspace.Views.Common"
+    xmlns:vm="using:headspace.ViewModels"
     mc:Ignorable="d"
+    NavigationCacheMode="Enabled"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Page.DataContext>
-        <vm:MoodboardViewModel x:Name="ViewModel" />
-    </Page.DataContext>
+    <Page.Resources>
+        <local:NullToBooleanConverter x:Key="NullToBooleanConverter" />
+    </Page.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*" />
-            <ColumnDefinition Width="2" />
             <ColumnDefinition Width="4*" />
         </Grid.ColumnDefinitions>
 
-        <Grid Grid.Column="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                <Button Command="{Binding AddMoodboardCommand}">
-                    <SymbolIcon Symbol="Add" />
-                </Button>
-                <Button Command="{Binding DeleteMoodboardCommand}">
-                    <SymbolIcon Symbol="Remove" />
-                </Button>
-                <Button Click="RenameButton_Click">
-                    <SymbolIcon Symbol="Rename" />
-                </Button>
-            </StackPanel>
-
-            <ListBox
-                Grid.Row="1"
-                ItemsSource="{Binding Moodboards}"
-                SelectedItem="{Binding SelectedMoodboard, Mode=TwoWay}"
-                DisplayMemberPath="Title" />
-        </Grid>
-
-        <Border Grid.Column="1" Width="10" />
+        <Border Grid.Column="0" MinWidth="100">
+            <commonViews:ListItemManager DataContext="{Binding MoodboardListManager}" />
+        </Border>
 
         <!-- Main Window -->
-        <Grid Grid.Column="2">
+        <Grid Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -58,17 +36,22 @@
 
             <!-- Toolbar -->
             <StackPanel Orientation="Horizontal" Spacing="10">
-                <ComboBox 
-                    ItemsSource="{Binding ColorOptions.Keys}"
-                    SelectedValue="{Binding SelectedPrimaryColor, Mode=TwoWay}" 
-                    Width="100" />
-                <ComboBox
-                    ItemsSource="{Binding ColorOptions.Keys}"
-                    SelectedValue="{Binding SelectedSecondaryColor, Mode=TwoWay}" 
-                    Width="100" />
-
+                <Button Background="{Binding PrimaryColor}" Width="28" Height="28">
+                    <Button.Flyout>
+                        <Flyout>
+                            <ColorPicker Color="{Binding PrimaryColor.Color, Mode=TwoWay}" />
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+                <Button Background="{Binding SecondaryColor}" Width="28" Height="28">
+                    <Button.Flyout>
+                        <Flyout>
+                            <ColorPicker Color="{Binding SecondaryColor.Color, Mode=TwoWay}" />
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
                 <Slider
-                    Value="{Binding SelectedThickness, Mode=TwoWay}"
+                    Value="{Binding StrokeThickness, Mode=TwoWay}"
                     Width="100"
                     Minimum="1" Maximum="10" />
 
@@ -79,12 +62,12 @@
 
             <!-- Drawing Area -->
             <Canvas
-                x:Name="DrawingCanvas"
+                x:Name="MoodboardCanvas"
                 Grid.Row="1"
                 Background="White"
-                PointerPressed="Canvas_PointerPressed"
-                PointerMoved="Canvas_PointerMoved"
-                PointerReleased="Canvas_PointerReleased" />
+                PointerPressed="MoodboardCanvas_PointerPressed"
+                PointerMoved="MoodboardCanvas_PointerMoved"
+                PointerReleased="MoodboardCanvas_PointerReleased" />
         </Grid>
     </Grid>
 </Page>

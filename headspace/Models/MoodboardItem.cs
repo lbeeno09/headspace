@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using headspace.Models.Common;
 
 namespace headspace.Models
 {
-    public class MoodboardItem
+    public partial class MoodboardItem : ProjectItemBase
     {
-        public string Title { get; set; } = string.Empty;
-
-        public List<StrokeData> Strokes { get; set; } = new();
+        [ObservableProperty]
+        private string content;
     }
 }

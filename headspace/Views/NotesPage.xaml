@@ -5,68 +5,58 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
     xmlns:local="using:headspace.Views"
+    xmlns:commonViews="using:headspace.Views.Common"
     xmlns:vm="using:headspace.ViewModels"
-    xmlns:wv2 ="using:Microsoft.Web.WebView2.Core"
-    xmlns:controls="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d"
+    NavigationCacheMode="Enabled"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Page.DataContext>
-        <vm:NoteViewModel x:Name="ViewModel" />
-    </Page.DataContext>
-    
+    <Page.Resources>
+        <local:NullToBooleanConverter x:Key="NullToBooleanConverter" />
+    </Page.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*" />
-            <ColumnDefinition Width="2" />
             <ColumnDefinition Width="3*" />
             <ColumnDefinition Width="3*" />
         </Grid.ColumnDefinitions>
-        
+
         <!-- Note List -->
-        <Grid Grid.Column="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                <Button Command="{Binding AddNoteCommand}">
-                    <SymbolIcon Symbol="Add" />
-                </Button>
-                <Button Command="{Binding DeleteNoteCommand}">
-                    <SymbolIcon Symbol="Remove" />
-                </Button>
-                <Button Click="RenameButton_Click">
-                    <SymbolIcon Symbol="Rename" />
-                </Button>
-            </StackPanel>
-            
-            <ListBox
-                Grid.Row="1"
-                ItemsSource="{Binding Notes}"
-                SelectedItem="{Binding SelectedNote, Mode=TwoWay}"
-                DisplayMemberPath="Title" />
-        </Grid>
-
-        <Border Grid.Column="1" Width="10" />
+        <Border Grid.Column="0" MinWidth="100">
+            <commonViews:ListItemManager DataContext="{Binding NoteListManager}" />
+        </Border>
 
         <!-- Markdown Editor -->
-        <TextBox IsEnabled="{Binding IsItemSelected}"
-            Grid.Column="2"
-            AcceptsReturn="True"
-            Text="{Binding SelectedNote.Content, Mode=TwoWay}"
-            TextChanged="TextBox_TextChanged"
-            TextWrapping="Wrap"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch" />
-        
+        <TextBox Text="{Binding SelectedNote.Content, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            Grid.Column="1"
+            AcceptsReturn="True" TextWrapping="Wrap"
+            VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+            IsEnabled="{Binding SelectedNote, Converter={StaticResource NullToBooleanConverter}}" />
+
         <!-- Markdown Preview -->
-        <WebView2
-            Grid.Column="3"
-            x:Name="MarkdownPreview"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch" />
+        <Grid Grid.Column="2">
+            <ScrollViewer HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalScrollMode="Disabled" VerticalScrollMode="Auto">
+                <controls:MarkdownTextBlock
+                    Text="{Binding SelectedNote.Content, Mode=TwoWay}"
+                    Background="White"
+                    Foreground="Black"
+                    CodeForeground="Black"
+                    Header1Foreground="Black"
+                    Header2Foreground="Black"
+                    Header3Foreground="Black"
+                    Header4Foreground="Black"
+                    Header5Foreground="Black"
+                    Header6Foreground="Black"
+                    InlineCodeForeground="Black"
+                    LinkForeground="Black"
+                    QuoteForeground="Black"
+                    IsTextSelectionEnabled="True"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch" />
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </Page>

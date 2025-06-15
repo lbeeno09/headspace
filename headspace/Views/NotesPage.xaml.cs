@@ -1,54 +1,50 @@
 using headspace.ViewModels;
-using Microsoft.UI.Xaml;
+using headspace.Views.Common;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
 using System;
-using System.ComponentModel;
 
 namespace headspace.Views
 {
-    public sealed partial class NotesPage : Page
+    public sealed partial class NotesPage : Page, ISavablePage
     {
+        private NoteViewModel ViewModel => DataContext as NoteViewModel;
+
         public NotesPage()
         {
             this.InitializeComponent();
-            this.Loaded += Page_Loaded;
 
-            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
-        }
-
-        private async void Page_Loaded(object sender, RoutedEventArgs e)
-        {
-            await MarkdownPreview.EnsureCoreWebView2Async();
-
-            ViewModel.UpdateMarkdown(ViewModel.SelectedNote?.Content ?? "");
-        }
-
-        private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if(e.PropertyName == nameof(ViewModel.MarkdownHtml))
+            this.DataContext = new NoteViewModel();
+            this.Loaded += (s, e) =>
             {
-                if(MarkdownPreview != null && MarkdownPreview.CoreWebView2 != null)
+                if(ViewModel != null)
                 {
-                    MarkdownPreview.NavigateToString(ViewModel.MarkdownHtml);
+                    ViewModel.PageXamlRoot = this.XamlRoot;
                 }
-            }
+            };
         }
 
-        private async void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        public void SavePageContentToModel()
         {
-            var textBox = sender as TextBox;
-            if(textBox != null && ViewModel.SelectedNote != null)
+            if(ViewModel.SelectedNote != null)
             {
-                ViewModel.UpdateMarkdown(textBox.Text);
+                ViewModel.SelectedNote.LastModified = DateTime.Now;
+
+                System.Diagnostics.Debug.WriteLine($"Notes page content updated in model for {ViewModel.SelectedNote.Title}");
             }
         }
+    }
 
-        private void RenameButton_Click(object sender, RoutedEventArgs e)
+    public class NullToBooleanConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if(DataContext is NoteViewModel viewModel)
-            {
-                _ = viewModel.RenameNoteAsync(this.XamlRoot);
-            }
+            return value != null;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            throw new NotImplementedException();
         }
     }
 }

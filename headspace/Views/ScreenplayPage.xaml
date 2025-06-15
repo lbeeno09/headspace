@@ -6,93 +6,89 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="using:headspace.Views"
+    xmlns:commonViews="using:headspace.Views.Common"
     xmlns:vm="using:headspace.ViewModels"
     mc:Ignorable="d"
+    NavigationCacheMode="Enabled"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Page.DataContext>
-        <vm:ScreenplayViewModel x:Name="ViewModel" />
-    </Page.DataContext>
-    
+    <Page.Resources>
+        <local:NullToBooleanConverter x:Key="NullToBooleanConverter" />
+    </Page.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*" />
-            <ColumnDefinition Width="2" />
             <ColumnDefinition Width="4*" />
         </Grid.ColumnDefinitions>
 
         <!-- Screenplay List -->
-        <Grid Grid.Column="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                <Button Command="{Binding AddScreenplayCommand}">
-                    <SymbolIcon Symbol="Add" />
-                </Button>
-                <Button Command="{Binding DeleteScreenplayCommand}">
-                    <SymbolIcon Symbol="Remove" />
-                </Button>
-                <Button Click="RenameButton_Click">
-                    <SymbolIcon Symbol="Rename" />
-                </Button>
-            </StackPanel>
-
-            <ListBox
-                Grid.Row="1"
-                ItemsSource="{Binding Screenplays}"
-                SelectedItem="{Binding SelectedScreenplay, Mode=TwoWay}"
-                DisplayMemberPath="Title" />
-        </Grid>
-
-        <Border Grid.Column="1" Width="10" />
+        <Border Grid.Column="0" MinWidth="100">
+            <commonViews:ListItemManager DataContext="{Binding ScreenplayListManager}" />
+        </Border>
 
         <!-- Main Window -->
-        <Grid Grid.Column="2" Margin="10">
+        <Grid Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
             <!-- Tool bar -->
-            <StackPanel Orientation="Horizontal" Spacing="10">
-                <ToggleButton x:Name="BoldButton" Content="B" Click="BoldButton_Click" />
-                <ToggleButton x:Name="ItalicButton" Content="I" Click="ItalicButton_Click" />
-                <ToggleButton x:Name="UnderlineButton" Content="U" Click="UnderlineButton_Click" />
-            </StackPanel>
+            <Border Grid.Row="0">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <ToggleButton x:Name="BoldButton" Click="BoldButton_Click" ToolTipService.ToolTip="Bold (Ctrl+B)">
+                        <FontIcon Glyph="&#xE8DD;" FontFamily="Segoe MDL2 Assets" />
+                    </ToggleButton>
+                    <ToggleButton x:Name="ItalicButton" Click="ItalicButton_Click" ToolTipService.ToolTip="Italics (Ctrl+I)">
+                        <FontIcon Glyph="&#xE8DB;" FontFamily="Segoe MDL2 Assets" />
+                    </ToggleButton>
+                    <ToggleButton x:Name="UnderlineButton" Click="UnderlineButton_Click" ToolTipService.ToolTip="Underline (Ctrl+U)">
+                        <FontIcon Glyph="&#xE8DC;" FontFamily="Segoe MDL2 Assets" />
+                    </ToggleButton>
+
+                    <Rectangle Width="1" Height="20" Fill="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+
+                    <ToggleButton x:Name="AlignLeftButton" Click="AlignLeftButton_Click" ToolTipService.ToolTip="Align Left">
+                        <FontIcon Glyph="&#xE8E2;" FontFamily="Segoe MDL2 Assets" />
+                    </ToggleButton>
+                    <ToggleButton x:Name="AlignCenterButton" Click="AlignCenterButton_Click" ToolTipService.ToolTip="Align Center">
+                        <FontIcon Glyph="&#xE8E3;" FontFamily="Segoe MDL2 Assets" />
+                    </ToggleButton>
+                    <ToggleButton x:Name="AlignRightButton" Click="AlignRightButton_Click" ToolTipService.ToolTip="Align Right">
+                        <FontIcon Glyph="&#xE8E4;" FontFamily="Segoe MDL2 Assets" />
+                    </ToggleButton>
+                </StackPanel>
+            </Border>
 
             <!-- Rich Edit Box -->
-            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                <Grid HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,20">
-                    <Border
-                        Background="White"
-                        Width="800"
-                        Height="1131"
-                        Padding="75"
-                        CornerRadius="2"
-                        BorderBrush="Gray"
-                        BorderThickness="1">
-                        <RichEditBox
-                            x:Name="Editor"                            
-                            IsEnabled="{Binding IsItemSelected}"
-                            AcceptsReturn="True"
-                            TextWrapping="Wrap"
-                            VerticalAlignment="Stretch"
-                            HorizontalAlignment="Stretch"
-                            BorderThickness="0"
-                            FontFamily="Courier New"
-                            FontSize="12"
-                            KeyDown="Editor_KeyDown">
-                            <RichEditBox.Resources>
-                                <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent" />
-                                <SolidColorBrush x:Key="TextControlForegroundFocused" Color="Black" />
-                            </RichEditBox.Resources>
-                        </RichEditBox>
-                    </Border>
-                </Grid>
-            </ScrollViewer>
+            <Grid Grid.Row="1">
+                <ScrollViewer 
+                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                    HorizontalScrollMode="Disabled" VerticalScrollMode="Auto">
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,20">
+                        <Border Background="White"
+                                Width="800" Height="1131" 
+                                Padding="75" CornerRadius="2"
+                                BorderBrush="Gray" BorderThickness="1">
+                            <RichEditBox x:Name="ScreenplayEditor" IsEnabled="{Binding SelectedScreenplay, Converter={StaticResource NullToBooleanConverter}}"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                                         BorderThickness="0"
+                                         FontSize="12"
+                                         Foreground="Black" Background="White"
+                                         SelectionChanged="ScreenplayEditor_SelectionChanged"
+                                         KeyDown="ScreenplayEditor_KeyDown">
+                                <RichEditBox.Resources>
+                                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="Black" />
+                                </RichEditBox.Resources>
+                            </RichEditBox>
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
         </Grid>
     </Grid>
 </Page>

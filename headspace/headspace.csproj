@@ -19,12 +19,15 @@
     <Content Remove="Assets\verovio\index.html" />
   </ItemGroup>
   <ItemGroup>
+    <None Remove="Views\Common\ListItemManager.xaml" />
     <None Remove="Views\DocumentsPage.xaml" />
     <None Remove="Views\DrawingsPage.xaml" />
     <None Remove="Views\HomePage.xaml" />
+    <None Remove="Views\MainViewPage.xaml" />
     <None Remove="Views\MoodboardPage.xaml" />
     <None Remove="Views\MusicPage.xaml" />
     <None Remove="Views\NotesPage.xaml" />
+    <None Remove="Views\PreferencesPage.xaml" />
     <None Remove="Views\ScreenplayPage.xaml" />
     <None Remove="Views\StoryboardPage.xaml" />
   </ItemGroup>
@@ -56,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.Markdown" Version="7.1.2" />
     <PackageReference Include="Markdig" Version="0.41.1" />
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.3.2" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3240.44" />
@@ -64,6 +68,21 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Services\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Common\ListItemManager.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\PreferencesPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\MainViewPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\ScreenplayPage.xaml">
