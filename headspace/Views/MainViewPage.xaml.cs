@@ -1,55 +1,35 @@
 using headspace.Models.Common;
+using headspace.Services.Implementations;
 using headspace.Views.Common;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
-using System.Text.Json;
-using System.Threading.Tasks;
+using System.Linq;
 using Windows.Storage;
-using Windows.Storage.Pickers;
 
 namespace headspace.Views
 {
     public sealed partial class MainViewPage : Page
     {
-        private ObservableCollection<SidebarItem> navigationItems;
-        private SidebarItem preferencesItem;
-        private const string FileExtension = ".hsp";
+        private const string _FileExtension = ".hsp";
+        private ProjectDataService _projectDataService;
 
         public MainViewPage()
         {
             this.InitializeComponent();
             this.Loaded += MainViewPage_Loaded;
 
-            ContentFrame.CacheSize = 15;
+            ContentFrame.CacheSize = 10;
 
-            navigationItems = new ObservableCollection<SidebarItem>
-            {
-                new SidebarItem { Name = "Home", Icon = "\xE80F", PageType = typeof(Views.HomePage) },
-                new SidebarItem { Name = "Note", Icon = "\xE70B", PageType = typeof(Views.NotesPage) },
-                new SidebarItem { Name = "Document", Icon = "\xE8A5", PageType = typeof(Views.DocumentsPage) },
-                new SidebarItem { Name = "Screenplay", Icon = "\xEFA9", PageType = typeof(Views.ScreenplayPage) },
-                new SidebarItem { Name = "Drawing", Icon = "\xE8B9", PageType = typeof(Views.DrawingsPage) },
-                new SidebarItem { Name = "Moodboard", Icon = "\xE8B8", PageType = typeof(Views.MoodboardPage) },
-                new SidebarItem { Name = "Storyboard", Icon = "\xE8A9", PageType = typeof(Views.StoryboardPage) },
-                //new SidebarItem {Name = "Music", Icon = "&#xE8A9;", PageType = typeof(Views.MusicPage) },
-            };
+            _projectDataService = new ProjectDataService((App.Current as App).m_window);
 
-            preferencesItem = new SidebarItem { Name = "Preferences", Icon = "\xE713", PageType = typeof(Views.PreferencesPage) };
-
-            SidebarNavigationItemsControl.ItemsSource = navigationItems;
-            PreferencesButtonContainer.Content = preferencesItem;
-
+            NavView.IsBackButtonVisible = NavigationViewBackButtonVisible.Collapsed;
+            NavView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftCompact;
             ContentFrame.Navigate(typeof(Views.HomePage));
 
-            CollapseSidebar();
-
-            LoadProjectData(Constants.DefaultProjectFileName);
+            //LoadProjectOnStartup();
         }
 
         private void MainViewPage_Loaded(object sender, RoutedEventArgs e)
@@ -64,54 +44,119 @@ namespace headspace.Views
             }
         }
 
-        private void Sidebar_PointerEntered(object sender, PointerRoutedEventArgs e)
+        // --- Navigation View ---
+        private void NavView_Loaded(object sender, RoutedEventArgs e)
         {
-            ExpandSidebar();
-        }
-
-
-        private void Sidebar_PointerExited(object sender, PointerRoutedEventArgs e)
-        {
-            CollapseSidebar();
-        }
-
-        private void ExpandSidebar()
-        {
-            SidebarGrid.Width = 200;
-
-            UpdateSidebarItemTextVisibility(Visibility.Visible);
-        }
-
-        private void CollapseSidebar()
-        {
-            SidebarGrid.Width = 50;
-
-            UpdateSidebarItemTextVisibility(Visibility.Collapsed);
-        }
-
-        private void UpdateSidebarItemTextVisibility(Visibility visibility)
-        {
-            foreach(var item in SidebarNavigationItemsControl.Items)
+            var navItems = new List<SidebarItem>
             {
-                var container = SidebarNavigationItemsControl.ContainerFromItem(item) as ContentPresenter;
-                if(container != null)
+                new SidebarItem { Content = "Home", Icon = new SymbolIcon(Symbol.Home),  Tag = "home" },
+                new SidebarItem { Content = "Note", Icon = new SymbolIcon(Symbol.Memo),  Tag = "note" },
+                new SidebarItem { Content = "Document", Icon = new SymbolIcon(Symbol.Document),  Tag = "document" },
+                new SidebarItem { Content = "Screenplay", Icon = new SymbolIcon(Symbol.Message),  Tag = "screenplay" },
+                new SidebarItem { Content = "Drawing", Icon = new SymbolIcon(Symbol.Highlight),  Tag = "drawing" },
+                new SidebarItem { Content = "Moodboard", Icon = new SymbolIcon(Symbol.People),  Tag = "moodboard" },
+                new SidebarItem { Content = "Storyboard", Icon = new SymbolIcon(Symbol.ViewAll),  Tag = "storyboard" },
+            };
+            foreach(var item in navItems)
+            {
+                var navItem = new NavigationViewItem
                 {
-                    var textBlock = FindVisualChild<TextBlock>(container);
-                    if(textBlock != null)
-                    {
-                        textBlock.Visibility = visibility;
-                    }
-                }
-            }
+                    Content = item.Content,
+                    Icon = item.Icon,
+                    Tag = item.Tag
+                };
 
-            var preferencesTextBlock = FindVisualChild<TextBlock>(PreferencesButtonContainer);
-            if(preferencesTextBlock != null)
+                NavView.MenuItems.Add(navItem);
+            }
+            NavView.MenuItems.Add(new NavigationViewItemSeparator());
+
+            // Initial Item
+            NavView.SelectedItem = navItems[0];
+        }
+
+        private void NavView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
+        {
+            if(args.IsSettingsInvoked)
             {
-                preferencesTextBlock.Visibility = visibility;
+                ContentFrame.Navigate(typeof(PreferencesPage));
+            }
+            else
+            {
+                var item = sender.MenuItems.OfType<NavigationViewItem>().First(x => (string)x.Content == (string)args.InvokedItem);
+                NavView_Navigate(item as NavigationViewItem);
             }
         }
 
-        // Helper method 
+        private void NavView_Navigate(NavigationViewItem item)
+        {
+            switch(item.Tag)
+            {
+                case "home":
+                    ContentFrame.Navigate(typeof(HomePage));
+                    break;
+                case "note":
+                    ContentFrame.Navigate(typeof(NotesPage));
+                    break;
+                case "document":
+                    ContentFrame.Navigate(typeof(DocumentsPage));
+                    break;
+                case "screenplay":
+                    ContentFrame.Navigate(typeof(ScreenplayPage));
+                    break;
+                case "drawing":
+                    ContentFrame.Navigate(typeof(DrawingsPage));
+                    break;
+                case "moodboard":
+                    ContentFrame.Navigate(typeof(MoodboardPage));
+                    break;
+                case "storyboard":
+                    ContentFrame.Navigate(typeof(StoryboardPage));
+                    break;
+            }
+        }
+
+        private async void LoadProjectOnStartup()
+        {
+            Project loadedProject = await _projectDataService.LoadProjectAsync(Constants.DefaultProjectFileName);
+            UpdateGlobalProject(loadedProject);
+            ContentFrame.Navigate(typeof(Views.HomePage));
+        }
+
+        private async void OpenProject_Click(object sender, RoutedEventArgs e)
+        {
+            StorageFile file = await _projectDataService.PickOpenFileAsync(new List<string> { _FileExtension });
+            if(file != null)
+            {
+                Project loadedProject = await _projectDataService.LoadProjectAsync(file.Name, file);
+                UpdateGlobalProject(loadedProject);
+                ContentFrame.Navigate(typeof(Views.HomePage));
+            }
+        }
+
+        private async void SaveProjectAs_Click(object sender, RoutedEventArgs e)
+        {
+            var appInstance = App.Current as App;
+            StorageFile file = await _projectDataService.PickSaveFileAsync(appInstance.CurrentProject.ProjectName, new List<string> { _FileExtension });
+
+            if(file != null)
+            {
+                _projectDataService.SetProjectName(appInstance.CurrentProject, Path.GetFileNameWithoutExtension(file.Name));
+
+                await _projectDataService.SaveProjectAsync(appInstance.CurrentProject, file.Name, file);
+            }
+        }
+
+        private async void SaveProject_Click(object sender, RoutedEventArgs e)
+        {
+            if(ContentFrame.Content is ISavablePage currentPage)
+            {
+                currentPage.SavePageContentToModel();
+            }
+
+            await _projectDataService.SaveProjectAsync((App.Current as App).CurrentProject, Constants.DefaultProjectFileName);
+        }
+
+        ////////// Helper Methods //////////
         private T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
             for(int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
@@ -132,158 +177,52 @@ namespace headspace.Views
             return null;
         }
 
-        private void SidebarNavigationButton_Click(object sender, RoutedEventArgs e)
+        private void UpdateGlobalProject(Project newProject)
         {
-            if(sender is Button clickedButton && clickedButton.DataContext is SidebarItem item)
+            var appInstance = App.Current as App;
+            if(appInstance != null && newProject != null)
             {
-                if(item.PageType != null)
+                appInstance.CurrentProject.ProjectName = newProject.ProjectName;
+
+                // TODO: abstract all this into one op
+                appInstance.CurrentProject.Notes.Clear();
+                foreach(var note in newProject.Notes)
                 {
-                    ContentFrame.Navigate(item.PageType);
-                    System.Diagnostics.Debug.WriteLine($"Navigated to: {item.Name}");
+                    appInstance.CurrentProject.Notes.Add(note);
+                }
+                appInstance.CurrentProject.Documents.Clear();
+                foreach(var document in newProject.Documents)
+                {
+                    appInstance.CurrentProject.Documents.Add(document);
+                }
+                appInstance.CurrentProject.Screenplays.Clear();
+                foreach(var screenplay in newProject.Screenplays)
+                {
+                    appInstance.CurrentProject.Screenplays.Add(screenplay);
+                }
+                appInstance.CurrentProject.Drawings.Clear();
+                foreach(var drawing in newProject.Drawings)
+                {
+                    appInstance.CurrentProject.Drawings.Add(drawing);
+                }
+                appInstance.CurrentProject.Moodboards.Clear();
+                foreach(var moodboard in newProject.Moodboards)
+                {
+                    appInstance.CurrentProject.Moodboards.Add(moodboard);
+                }
+                appInstance.CurrentProject.Storyboards.Clear();
+                foreach(var storyboard in newProject.Storyboards)
+                {
+                    appInstance.CurrentProject.Storyboards.Add(storyboard);
+                }
+                appInstance.CurrentProject.Musics.Clear();
+                foreach(var music in newProject.Musics)
+                {
+                    appInstance.CurrentProject.Musics.Add(music);
                 }
             }
         }
 
-        private async void OpenProject_Click(object sender, RoutedEventArgs e)
-        {
-            var openPicker = new FileOpenPicker();
-
-            var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle((App.Current as App).m_window);
-            WinRT.Interop.InitializeWithWindow.Initialize(openPicker, windowHandle);
-
-            openPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-            openPicker.FileTypeFilter.Add(FileExtension);
-
-            StorageFile file = await openPicker.PickSingleFileAsync();
-            if(file != null)
-            {
-                await LoadProjectData(file.Name, file);
-            }
-        }
-
-        private async Task LoadProjectData(string fileName, StorageFile file = null)
-        {
-            try
-            {
-                if(file == null)
-                {
-                    StorageFolder localFolder = ApplicationData.Current.LocalFolder;
-
-                    file = await localFolder.GetFileAsync(fileName);
-                }
-
-                string json = await FileIO.ReadTextAsync(file);
-                var loadedProject = JsonSerializer.Deserialize<Project>(json);
-
-                var appInstance = App.Current as App;
-                if(appInstance != null && loadedProject != null)
-                {
-                    appInstance.CurrentProject.ProjectName = loadedProject.ProjectName;
-
-                    // TODO: abstract all this into one op
-                    appInstance.CurrentProject.Notes.Clear();
-                    foreach(var note in loadedProject.Notes)
-                    {
-                        appInstance.CurrentProject.Notes.Add(note);
-                    }
-                    appInstance.CurrentProject.Documents.Clear();
-                    foreach(var document in loadedProject.Documents)
-                    {
-                        appInstance.CurrentProject.Documents.Add(document);
-                    }
-                    appInstance.CurrentProject.Screenplays.Clear();
-                    foreach(var screenplay in loadedProject.Screenplays)
-                    {
-                        appInstance.CurrentProject.Screenplays.Add(screenplay);
-                    }
-                    appInstance.CurrentProject.Drawings.Clear();
-                    foreach(var drawing in loadedProject.Drawings)
-                    {
-                        appInstance.CurrentProject.Drawings.Add(drawing);
-                    }
-                    appInstance.CurrentProject.Moodboards.Clear();
-                    foreach(var moodboard in loadedProject.Moodboards)
-                    {
-                        appInstance.CurrentProject.Moodboards.Add(moodboard);
-                    }
-                    appInstance.CurrentProject.Storyboards.Clear();
-                    foreach(var storyboard in loadedProject.Storyboards)
-                    {
-                        appInstance.CurrentProject.Storyboards.Add(storyboard);
-                    }
-
-                    ContentFrame.Navigate(typeof(Views.HomePage));
-
-                    System.Diagnostics.Debug.WriteLine($"Project '{appInstance.CurrentProject.ProjectName}' loaded from: {file.Path}");
-                }
-            }
-            catch(FileNotFoundException)
-            {
-                System.Diagnostics.Debug.WriteLine($"No project file '{fileName}' found. Starting with default/new project.");
-
-                var appInstance = App.Current as App;
-                appInstance.CurrentProject = new Project();
-                ContentFrame.Navigate(typeof(Views.HomePage));
-            }
-            catch(Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading project: {ex.Message}");
-            }
-        }
-
-        private async void SaveProject_Click(object sender, RoutedEventArgs e)
-        {
-            await SaveProjectAsync((App.Current as App).CurrentProject.ProjectName);
-        }
-
-        private async void SaveProjectAs_Click(object sender, RoutedEventArgs e)
-        {
-            var savePicker = new FileSavePicker();
-
-            var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle((App.Current as App).m_window);
-            WinRT.Interop.InitializeWithWindow.Initialize(savePicker, windowHandle);
-
-            savePicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-            savePicker.FileTypeChoices.Add("Headspace", new List<string> { FileExtension });
-            savePicker.SuggestedFileName = (App.Current as App).CurrentProject.ProjectName;
-
-            StorageFile file = await savePicker.PickSaveFileAsync();
-            if(file != null)
-            {
-                var appInstance = App.Current as App;
-                appInstance.CurrentProject.ProjectName = Path.GetFileNameWithoutExtension(file.Name);
-                await SaveProjectAsync(file.Name, file);
-            }
-        }
-
-        private async Task SaveProjectAsync(string fileName, StorageFile file = null)
-        {
-            try
-            {
-                if(ContentFrame.Content is ISavablePage currentPage)
-                {
-                    currentPage.SavePageContentToModel();
-                }
-
-                if(file == null)
-                {
-                    StorageFolder localFolder = ApplicationData.Current.LocalFolder;
-
-                    file = await localFolder.CreateFileAsync(fileName, CreationCollisionOption.ReplaceExisting);
-                }
-
-                var appInstance = App.Current as App;
-                string json = JsonSerializer.Serialize(appInstance.CurrentProject, new JsonSerializerOptions { WriteIndented = true });
-
-                await FileIO.WriteTextAsync(file, json);
-
-                System.Diagnostics.Debug.WriteLine($"Project '{appInstance.CurrentProject.ProjectName}' saved to: {file.Path}");
-            }
-            catch(Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error saving project: {ex.Message}");
-            }
-        }
     }
 
     public static class Constants

@@ -67,9 +67,6 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250513003" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Services\" />
-  </ItemGroup>
-  <ItemGroup>
     <Page Update="Views\Common\ListItemManager.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

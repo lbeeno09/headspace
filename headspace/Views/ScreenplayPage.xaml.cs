@@ -43,8 +43,19 @@ namespace headspace.Views
 
         private void ScreenplayPage_Loaded(object sender, RoutedEventArgs e)
         {
+            if(ViewModel != null)
+            {
+                ViewModel.RequestDisplayScreenplay -= ViewModel_Request_DisplayScreenplay;
+                ViewModel.RequestDisplayScreenplay += ViewModel_Request_DisplayScreenplay;
+            }
             LoadDocument(ViewModel.SelectedScreenplay);
         }
+
+        private void ViewModel_Request_DisplayScreenplay(object sender, ScreenplayItem screenplayItem)
+        {
+            LoadDocument(ViewModel.SelectedScreenplay);
+        }
+
 
         private void BoldButton_Click(object sender, RoutedEventArgs e)
         { ApplyCharacterFormatting(CharacterFormatting.Bold); }

@@ -2,6 +2,7 @@
 using headspace.Models;
 using headspace.ViewModels.Common;
 using Microsoft.UI.Xaml;
+using System;
 using System.Linq;
 
 namespace headspace.ViewModels
@@ -11,6 +12,8 @@ namespace headspace.ViewModels
         public ListItemManagerViewModel<DocumentItem> DocumentListManager { get; }
 
         public DocumentItem SelectedDocument => DocumentListManager.SelectedItem;
+
+        public event EventHandler<DocumentItem> RequestDisplayDocument;
 
         public XamlRoot PageXamlRoot
         {

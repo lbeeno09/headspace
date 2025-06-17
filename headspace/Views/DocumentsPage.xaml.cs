@@ -44,7 +44,18 @@ namespace headspace.Views
 
         private void DocumentsPage_Loaded(object sender, RoutedEventArgs e)
         {
-            LoadDocument(ViewModel.SelectedDocument);
+            if(ViewModel != null)
+            {
+                ViewModel.RequestDisplayDocument -= ViewModel_Request_DisplayDocument;
+                ViewModel.RequestDisplayDocument += ViewModel_Request_DisplayDocument;
+
+                LoadDocument(ViewModel.SelectedDocument);
+            }
+        }
+
+        private void ViewModel_Request_DisplayDocument(object sender, DocumentItem documentItem)
+        {
+            LoadDocument(documentItem);
         }
 
         private void BoldButton_Click(object sender, RoutedEventArgs e)

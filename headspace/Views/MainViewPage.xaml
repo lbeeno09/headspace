@@ -10,17 +10,6 @@
     NavigationCacheMode="Enabled"
     mc:Ignorable="d">
 
-    <Page.Resources>
-        <DataTemplate x:Key="SidebarButtonTemplate" x:DataType="commonModels:SidebarItem">
-            <Button Click="SidebarNavigationButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
-                <Grid ColumnDefinitions="Auto,*" HorizontalAlignment="Stretch">
-                    <FontIcon Grid.Column="0" Glyph="{Binding Icon}" Width="28" Height="28" FontFamily="Segoe MDL2 Assets" />
-                    <TextBlock Grid.Column="1" Text="{Binding Name}" HorizontalAlignment="Left" TextAlignment="Left" />
-                </Grid>
-            </Button>
-        </DataTemplate>
-    </Page.Resources>
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -61,35 +50,12 @@
         </Grid>
 
         <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-
-            <Grid Grid.Column="0"
-                x:Name="SidebarGrid" MinWidth="48" MaxWidth="200"
-                PointerEntered="Sidebar_PointerEntered" PointerExited="Sidebar_PointerExited"
-                HorizontalAlignment="Left" VerticalAlignment="Stretch">
-                <Grid VerticalAlignment="Stretch">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
-                    <ItemsControl Grid.Row="0" x:Name="SidebarNavigationItemsControl"
-                                  VerticalAlignment="Stretch"
-                                  ItemTemplate="{StaticResource SidebarButtonTemplate}">
-                    </ItemsControl>
-
-                    <ContentControl Grid.Row="1" x:Name="PreferencesButtonContainer"
-                                    ContentTemplate="{StaticResource SidebarButtonTemplate}">
-                    </ContentControl>
-                </Grid>
-            </Grid>
-
-            <Grid Grid.Column="1">
-                <Frame x:Name="ContentFrame" />
-            </Grid>
+            <NavigationView x:Name="NavView" Grid.Row="1"
+                                    ItemInvoked="NavView_ItemInvoked"
+                                    Loaded="NavView_Loaded"
+                                    VerticalAlignment="Stretch">
+            <Frame x:Name="ContentFrame" />
+            </NavigationView>
         </Grid>
     </Grid>
 </Page>

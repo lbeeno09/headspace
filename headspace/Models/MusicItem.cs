@@ -1,8 +1,11 @@
-﻿namespace headspace.Models
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using headspace.Models.Common;
+
+namespace headspace.Models
 {
-    public class MusicItem
+    public partial class MusicItem : ProjectItemBase
     {
-        public string Title { get; set; }
-        public string Content { get; set; }
+        [ObservableProperty]
+        private string content;
     }
 }

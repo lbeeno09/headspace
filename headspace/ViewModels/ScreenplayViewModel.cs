@@ -2,6 +2,7 @@
 using headspace.Models;
 using headspace.ViewModels.Common;
 using Microsoft.UI.Xaml;
+using System;
 using System.Linq;
 
 namespace headspace.ViewModels
@@ -11,6 +12,8 @@ namespace headspace.ViewModels
         public ListItemManagerViewModel<ScreenplayItem> ScreenplayListManager { get; }
 
         public ScreenplayItem SelectedScreenplay => ScreenplayListManager.SelectedItem;
+
+        public event EventHandler<ScreenplayItem> RequestDisplayScreenplay;
 
         public XamlRoot PageXamlRoot
         {
