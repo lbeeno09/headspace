@@ -1,37 +1,79 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using headspace.Models;
+﻿using headspace.Models;
+using headspace.Services.Interfaces;
 using headspace.ViewModels.Common;
 using Microsoft.UI.Xaml;
-using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace headspace.ViewModels
 {
-    public partial class ScreenplayViewModel : ObservableObject
+    public partial class ScreenplayViewModel : ViewModelBase<ScreenplayModel>
     {
-        public ListItemManagerViewModel<ScreenplayItem> ScreenplayListManager { get; }
+        private readonly IDialogService _dialogService;
+        public XamlRoot? ViewXamlRoot { get; set; }
 
-        public ScreenplayItem SelectedScreenplay => ScreenplayListManager.SelectedItem;
-
-        public event EventHandler<ScreenplayItem> RequestDisplayScreenplay;
-
-        public XamlRoot PageXamlRoot
+        public ScreenplayViewModel(IDialogService dialogService)
         {
-            set
+            _dialogService = dialogService;
+        }
+
+        protected override void Add()
+        {
+            var newScreenplay = new ScreenplayModel { Title = $"New Screenplay {Items.Count + 1}", Content = @"" };
+
+            Items.Add(newScreenplay);
+            SelectedItem = newScreenplay;
+        }
+
+        protected override async void Rename()
+        {
+            if(SelectedItem == null || ViewXamlRoot == null)
             {
-                if(value != null)
-                {
-                    ScreenplayListManager.XamlRoot = value;
-                }
+                return;
+            }
+
+            var newName = await _dialogService.ShowRenameDialogAsync(SelectedItem.Title, ViewXamlRoot);
+            if(!string.IsNullOrWhiteSpace(newName))
+            {
+                SelectedItem.Title = newName;
             }
         }
 
-        public ScreenplayViewModel()
+        protected override void Delete()
         {
-            ScreenplayListManager = new ListItemManagerViewModel<ScreenplayItem>((App.Current as App).CurrentProject.Screenplays);
+            if(SelectedItem == null)
+            {
+                return;
+            }
 
-            ScreenplayListManager.SelectedItem = ScreenplayListManager.Items.FirstOrDefault();
-            ScreenplayListManager.OnItemSelected += (sender, item) => OnPropertyChanged(nameof(SelectedScreenplay));
+            Items.Remove(SelectedItem);
+            SelectedItem = Items.FirstOrDefault();
+        }
+
+        protected override void Save()
+        {
+            if(SelectedItem == null)
+            {
+                return;
+            }
+
+            Debug.WriteLine($"SAVING ITEM: {SelectedItem.Title}");
+        }
+
+        protected override void SaveAll()
+        {
+            Debug.WriteLine("SAVING ALL ITEMS...");
+            if(Items.Count == 0)
+            {
+                Debug.WriteLine("No items to save.");
+                return;
+            }
+
+            foreach(var note in Items)
+            {
+                Debug.WriteLine($" -> Saving: {note.Title}");
+            }
+            Debug.WriteLine("...DONE");
         }
     }
 }

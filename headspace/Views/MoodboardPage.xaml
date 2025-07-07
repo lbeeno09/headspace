@@ -6,15 +6,14 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
-    xmlns:local="using:headspace.Views"
-    xmlns:commonViews="using:headspace.Views.Common"
+    xmlns:conv="using:headspace.Converters"
+    xmlns:vCommon="using:headspace.Views.Common"
     xmlns:vm="using:headspace.ViewModels"
     mc:Ignorable="d"
-    NavigationCacheMode="Enabled"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Page.Resources>
-        <local:NullToBooleanConverter x:Key="NullToBooleanConverter" />
+        <conv:NullToBooleanConverter x:Key="NullToBooleanConverter" />
     </Page.Resources>
 
     <Grid>
@@ -23,9 +22,7 @@
             <ColumnDefinition Width="4*" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" MinWidth="100">
-            <commonViews:ListItemManager DataContext="{Binding MoodboardListManager}" />
-        </Border>
+        <vCommon:ItemListView Grid.Column="0" DataContext="{x:Bind ViewModel}" />
 
         <!-- Main Window -->
         <Grid Grid.Column="1">
@@ -35,39 +32,18 @@
             </Grid.RowDefinitions>
 
             <!-- Toolbar -->
-            <StackPanel Orientation="Horizontal" Spacing="10">
-                <Button Background="{Binding PrimaryColor}" Width="28" Height="28">
-                    <Button.Flyout>
-                        <Flyout>
-                            <ColorPicker Color="{Binding PrimaryColor.Color, Mode=TwoWay}" />
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-                <Button Background="{Binding SecondaryColor}" Width="28" Height="28">
-                    <Button.Flyout>
-                        <Flyout>
-                            <ColorPicker Color="{Binding SecondaryColor.Color, Mode=TwoWay}" />
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-                <Slider
-                    Value="{Binding StrokeThickness, Mode=TwoWay}"
-                    Width="100"
-                    Minimum="1" Maximum="10" />
-
-                <ToggleButton
-                    Content="Eraser"
-                    IsChecked="{Binding IsEraserMode, Mode=TwoWay}" />
-            </StackPanel>
+            <CommandBar Grid.Row="0">
+            </CommandBar>
 
             <!-- Drawing Area -->
-            <Canvas
-                x:Name="MoodboardCanvas"
-                Grid.Row="1"
-                Background="White"
-                PointerPressed="MoodboardCanvas_PointerPressed"
-                PointerMoved="MoodboardCanvas_PointerMoved"
-                PointerReleased="MoodboardCanvas_PointerReleased" />
+            <canvas:CanvasControl x:Name="MoodboardCanvas"
+                                  Grid.Row="1"
+                                  Background="White"
+                                  Draw="MoodboardCanvas_Draw"
+                                  PointerPressed="MoodboardCanvas_PointerPressed"
+                                  PointerMoved="MoodboardCanvas_PointerMoved"
+                                  PointerReleased="MoodboardCanvas_PointerReleased" 
+                                  ClearColor="White"/>
         </Grid>
     </Grid>
 </Page>

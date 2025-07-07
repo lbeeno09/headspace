@@ -1,68 +1,95 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using headspace.Models;
+using headspace.Services.Interfaces;
 using headspace.ViewModels.Common;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media;
+using System.Diagnostics;
 using System.Linq;
-using System.Windows.Input;
+using Windows.UI;
 
 namespace headspace.ViewModels
 {
-    public partial class MoodboardViewModel : ObservableObject
+    public partial class MoodboardViewModel : ViewModelBase<MoodboardModel>
     {
-        public ListItemManagerViewModel<MoodboardItem> MoodboardListManager { get; }
-
-        public MoodboardItem SelectedMoodboard => MoodboardListManager.SelectedItem;
+        private readonly IDialogService _dialogService;
+        public XamlRoot? ViewXamlRoot { get; set; }
 
         [ObservableProperty]
-        private SolidColorBrush primaryColor = new SolidColorBrush(Colors.Black);
-        [ObservableProperty]
-        private SolidColorBrush secondaryColor = new SolidColorBrush(Colors.White);
-        [ObservableProperty]
-        private double strokeThickness = 2.0;
-        [ObservableProperty]
-        private bool isEraserMode;
+        private Color _primaryColor = Colors.Black;
 
-        public ICommand ClearCanvasCommand { get; }
+        [ObservableProperty]
+        private Color _secondaryColor = Colors.White;
 
-        public XamlRoot PageXamlRoot
+        [ObservableProperty]
+        private float _strokeThickness = 2.0f;
+
+        [ObservableProperty]
+        private bool _isEraserMode = false;
+
+
+        public MoodboardViewModel(IDialogService dialogService)
         {
-            set
+            _dialogService = dialogService;
+        }
+
+        protected override void Add()
+        {
+            var newMoodboard = new MoodboardModel { Title = $"New Moodboard {Items.Count + 1}" };
+
+            Items.Add(newMoodboard);
+            SelectedItem = newMoodboard;
+        }
+
+        protected override async void Rename()
+        {
+            if(SelectedItem == null || ViewXamlRoot == null)
             {
-                if(value != null)
-                {
-                    MoodboardListManager.XamlRoot = value;
-                }
+                return;
+            }
+
+            var newName = await _dialogService.ShowRenameDialogAsync(SelectedItem.Title, ViewXamlRoot);
+            if(!string.IsNullOrWhiteSpace(newName))
+            {
+                SelectedItem.Title = newName;
             }
         }
 
-        public MoodboardViewModel()
+        protected override void Delete()
         {
-            MoodboardListManager = new ListItemManagerViewModel<MoodboardItem>((App.Current as App).CurrentProject.Moodboards);
-
-            MoodboardListManager.SelectedItem = MoodboardListManager.Items.FirstOrDefault();
-            MoodboardListManager.OnItemSelected += (sender, item) => OnPropertyChanged(nameof(SelectedMoodboard));
-
-            ClearCanvasCommand = new RelayCommand(ClearCanvas);
-
-        }
-
-        private void ClearCanvas()
-        {
-            if(SelectedMoodboard != null)
+            if(SelectedItem == null)
             {
-                SelectedMoodboard.Content = "";
-
-                System.Diagnostics.Debug.WriteLine($"Cleared drawing for: {SelectedMoodboard.Title}");
+                return;
             }
+
+            Items.Remove(SelectedItem);
+            SelectedItem = Items.FirstOrDefault();
         }
 
-        [RelayCommand]
-        private void ToggleErase()
+        protected override void Save()
         {
-            IsEraserMode = !IsEraserMode;
+            if(SelectedItem == null)
+            {
+                return;
+            }
+
+            Debug.WriteLine($"SAVING ITEM: {SelectedItem.Title}");
+        }
+
+        protected override void SaveAll()
+        {
+            Debug.WriteLine("SAVING ALL ITEMS...");
+            if(Items.Count == 0)
+            {
+                Debug.WriteLine("No items to save.");
+                return;
+            }
+
+            foreach(var note in Items)
+            {
+                Debug.WriteLine($" -> Saving: {note.Title}");
+            }
+            Debug.WriteLine("...DONE");
         }
     }
 }

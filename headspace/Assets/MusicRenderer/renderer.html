@@ -1,0 +1,24 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<title>Music Renderer</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.5.1/abcjs-basic-min.min.js"></script>
+</head>
+
+<body>
+	<div id="sheet-music"></div>
+
+	<script>
+		function renderAbc(abcString) {
+
+			const outputDiv = document.getElementById("sheet-music");
+			outputDiv.innerHTML = "";
+
+			ABCJS.renderAbc(outputDiv, abcString);
+		}
+	</script>
+</body>
+
+</html>

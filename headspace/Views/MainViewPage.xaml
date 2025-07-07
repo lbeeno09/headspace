@@ -7,7 +7,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:commonModels="using:headspace.Models.Common"
     xmlns:local="using:headspace.Views"
-    NavigationCacheMode="Enabled"
     mc:Ignorable="d">
 
     <Grid>
@@ -17,45 +16,60 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" x:Name="CustomTitleBar">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+        <MenuBar Grid.Row="0" x:Name="AppMenuBar">
+            <MenuBarItem Title="File">
+                <MenuFlyoutItem Text="New" Command="{x:Bind ViewModel.NewProjectCommand}">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="N" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Open..." Command="{x:Bind ViewModel.OpenProjectCommand}">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="O" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Save" Command="{x:Bind ViewModel.SaveProjectCommand}">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control,Shift,Menu" Key="S" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Save As..." Command="{x:Bind ViewModel.SaveProjectAsCommand}" />
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem Text="Exit" />
+            </MenuBarItem>
+            <MenuBarItem Title="Edit">
+                <MenuFlyoutItem Text="Undo" />
+                <MenuFlyoutItem Text="Redo" />
+                <MenuFlyoutItem Text="Cut" />
+                <MenuFlyoutItem Text="Copy" />
+                <MenuFlyoutItem Text="Paste" />
+            </MenuBarItem>
+            <MenuBarItem Title="View">
+                <MenuFlyoutItem Text="Toggle Sidebar" />
+            </MenuBarItem>
+            <MenuBarItem Title="Help">
+                <MenuFlyoutItem Text="About" />
+            </MenuBarItem>
+        </MenuBar>
 
-            <MenuBar Grid.Column="0" HorizontalAlignment="Left">
-                <MenuBarItem Title="File">
-                    <MenuFlyoutItem Text="New" />
-                    <MenuFlyoutItem Text="Open..." Click="OpenProject_Click"/>
-                    <MenuFlyoutItem Text="Save" Click="SaveProject_Click"/>
-                    <MenuFlyoutItem Text="Save As..."  Click="SaveProjectAs_Click" />
-                    <MenuFlyoutSeparator />
-                    <MenuFlyoutItem Text="Exit" />
-                </MenuBarItem>
-                <MenuBarItem Title="Edit">
-                    <MenuFlyoutItem Text="Undo" />
-                    <MenuFlyoutItem Text="Redo" />
-                    <MenuFlyoutItem Text="Cut" />
-                    <MenuFlyoutItem Text="Copy" />
-                    <MenuFlyoutItem Text="Paste" />
-                </MenuBarItem>
-                <MenuBarItem Title="View">
-                    <MenuFlyoutItem Text="Toggle Sidebar" />
-                </MenuBarItem>
-                <MenuBarItem Title="Help">
-                    <MenuFlyoutItem Text="About" />
-                </MenuBarItem>
-            </MenuBar>
-            <Grid x:Name="AppTitleBar" Grid.Column="1" Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
-        </Grid>
-
-        <Grid Grid.Row="1">
-            <NavigationView x:Name="NavView" Grid.Row="1"
-                                    ItemInvoked="NavView_ItemInvoked"
-                                    Loaded="NavView_Loaded"
-                                    VerticalAlignment="Stretch">
+        <NavigationView Grid.Row="1"
+                        x:Name="SidebarView" 
+                        PaneDisplayMode="LeftCompact"
+                        IsBackButtonVisible="Collapsed"
+                        IsSettingsVisible="True"
+                        ItemInvoked="NavView_ItemInvoked">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Home" Icon="Home" Tag="HomePage" />
+                <NavigationViewItem Content="Note" Icon="Edit" Tag="NotePage" />
+                <NavigationViewItem Content="Document" Icon="Document" Tag="DocumentPage" />
+                <NavigationViewItem Content="Screenplay" Icon="Comment" Tag="ScreenplayPage" />
+                <NavigationViewItem Content="Drawing" Icon="Highlight" Tag="DrawingPage" />
+                <NavigationViewItem Content="Moodboard" Icon="Emoji" Tag="MoodboardPage" />
+                <NavigationViewItem Content="Storyboard" Icon="Copy" Tag="StoryboardPage" />
+                <NavigationViewItem Content="Music" Icon="Audio" Tag="MusicPage" />
+            </NavigationView.MenuItems>
+            
             <Frame x:Name="ContentFrame" />
-            </NavigationView>
-        </Grid>
+        </NavigationView>
     </Grid>
 </Page>

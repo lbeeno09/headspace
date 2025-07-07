@@ -6,15 +6,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
-    xmlns:local="using:headspace.Views"
-    xmlns:commonViews="using:headspace.Views.Common"
+    xmlns:conv="using:headspace.Converters"
+    xmlns:mCommon="using:headspace.Models.Common"
+    xmlns:vCommon="using:headspace.Views.Common"
     xmlns:vm="using:headspace.ViewModels"
     mc:Ignorable="d"
-    NavigationCacheMode="Enabled"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Page.Resources>
-        <local:NullToBooleanConverter x:Key="NullToBooleanConverter" />
+        <conv:NullToBooleanConverter x:Key="NullToBooleanConverter" />
     </Page.Resources>
 
     <Grid>
@@ -24,50 +24,54 @@
         </Grid.ColumnDefinitions>
 
         <!-- Storyboard List -->
-        <Border Grid.Column="0" MinWidth="100">
-            <commonViews:ListItemManager DataContext="{Binding StoryboardListManager}" />
-        </Border>
-
+        <vCommon:ItemListView Grid.Column="0" DataContext="{x:Bind ViewModel}" />
 
         <!-- Main Window -->
         <Grid Grid.Column="1" >
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <!-- Toolbar -->
-            <StackPanel Orientation="Horizontal" Spacing="10">
-                <Button Background="{Binding PrimaryColor}" Width="28" Height="28">
-                    <Button.Flyout>
-                        <Flyout>
-                            <ColorPicker Color="{Binding PrimaryColor.Color, Mode=TwoWay}" />
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-                <Button Background="{Binding SecondaryColor}" Width="28" Height="28">
-                    <Button.Flyout>
-                        <Flyout>
-                            <ColorPicker Color="{Binding SecondaryColor.Color, Mode=TwoWay}" />
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-                <Slider Value="{Binding StrokeThickness, Mode=TwoWay}"
-                        Width="100"
-                        Minimum="1" Maximum="10" />
-                <ToggleButton
-                    Content="Eraser"
-                    IsChecked="{Binding IsEraserMode, Mode=TwoWay}" />
-            </StackPanel>
-
+            <CommandBar Grid.Row="0">
+            </CommandBar>
+            
             <!-- Drawing Area -->
-            <Canvas
-                x:Name="StoryboardCanvas"
-                Grid.Row="1"
-                Background="White"
-                PointerPressed="StoryboardCanvas_PointerPressed"
-                PointerMoved="StoryboardCanvas_PointerMoved"
-                PointerReleased="StoryboardCanvas_PointerReleased" />
+            <canvas:CanvasControl Grid.Row="1"
+                                  x:Name="StoryboardCanvas"
+                                  Background="White"
+                                  ClearColor="White"
+                                  Draw="StoryboardCanvas_Draw"
+                                  PointerPressed="StoryboardCanvas_PointerPressed"
+                                  PointerMoved="StoryboardCanvas_PointerMoved"
+                                  PointerReleased="StoryboardCanvas_PointerReleased" />
+
+            <Grid Grid.Row="2">
+                <CommandBar Background="Transparent">
+                    <AppBarButton Icon="Add" Label="Add Panel" Command="{x:Bind ViewModel.AddPanelCommand}" />
+                    <AppBarButton Icon="Delete" Label="Delete Panel" Command="{x:Bind ViewModel.DeletePanelCommand}" />
+                </CommandBar>
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    <ListView ItemsSource="{x:Bind ViewModel.SelectedItem.Panels, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.ActivePanel, Mode=TwoWay}"
+                              SelectionMode="Single">
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="mCommon:PanelModel">
+                                <Border>
+                                    <TextBlock Text="{x:Bind Title}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </ScrollViewer>
+            </Grid>
         </Grid>
     </Grid>
 </Page>

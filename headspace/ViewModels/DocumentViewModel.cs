@@ -1,37 +1,79 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using headspace.Models;
+﻿using headspace.Models;
+using headspace.Services.Interfaces;
 using headspace.ViewModels.Common;
 using Microsoft.UI.Xaml;
-using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace headspace.ViewModels
 {
-    public partial class DocumentViewModel : ObservableObject
+    public partial class DocumentViewModel : ViewModelBase<DocumentModel>
     {
-        public ListItemManagerViewModel<DocumentItem> DocumentListManager { get; }
+        private readonly IDialogService _dialogService;
+        public XamlRoot? ViewXamlRoot { get; set; }
 
-        public DocumentItem SelectedDocument => DocumentListManager.SelectedItem;
-
-        public event EventHandler<DocumentItem> RequestDisplayDocument;
-
-        public XamlRoot PageXamlRoot
+        public DocumentViewModel(IDialogService dialogService)
         {
-            set
+            _dialogService = dialogService;
+        }
+
+        protected override void Add()
+        {
+            var newDoc = new DocumentModel { Title = $"New Document {Items.Count + 1}", Content = @"" };
+
+            Items.Add(newDoc);
+            SelectedItem = newDoc;
+        }
+
+        protected override async void Rename()
+        {
+            if(SelectedItem == null || ViewXamlRoot == null)
             {
-                if(value != null)
-                {
-                    DocumentListManager.XamlRoot = value;
-                }
+                return;
+            }
+
+            var newName = await _dialogService.ShowRenameDialogAsync(SelectedItem.Title, ViewXamlRoot);
+            if(!string.IsNullOrWhiteSpace(newName))
+            {
+                SelectedItem.Title = newName;
             }
         }
 
-        public DocumentViewModel()
+        protected override void Delete()
         {
-            DocumentListManager = new ListItemManagerViewModel<DocumentItem>((App.Current as App).CurrentProject.Documents);
+            if(SelectedItem == null)
+            {
+                return;
+            }
 
-            DocumentListManager.SelectedItem = DocumentListManager.Items.FirstOrDefault();
-            DocumentListManager.OnItemSelected += (sender, item) => OnPropertyChanged(nameof(SelectedDocument));
+            Items.Remove(SelectedItem);
+            SelectedItem = Items.FirstOrDefault();
+        }
+
+        protected override void Save()
+        {
+            if(SelectedItem == null)
+            {
+                return;
+            }
+
+            Debug.WriteLine($"SAVING ITEM: {SelectedItem.Title}");
+        }
+
+        protected override void SaveAll()
+        {
+            Debug.WriteLine("SAVING ALL ITEMS...");
+            if(Items.Count == 0)
+            {
+                Debug.WriteLine("No items to save.");
+                return;
+            }
+
+            foreach(var note in Items)
+            {
+                Debug.WriteLine($" -> Saving: {note.Title}");
+            }
+            Debug.WriteLine("...DONE");
         }
     }
 }

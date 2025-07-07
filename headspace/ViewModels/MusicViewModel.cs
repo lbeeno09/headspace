@@ -1,34 +1,85 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using headspace.Models;
+﻿using headspace.Models;
+using headspace.Services.Interfaces;
 using headspace.ViewModels.Common;
 using Microsoft.UI.Xaml;
+using System.Diagnostics;
 using System.Linq;
 
 namespace headspace.ViewModels
 {
-    public partial class MusicViewModel : ObservableObject
+    public class MusicViewModel : ViewModelBase<MusicModel>
     {
-        public ListItemManagerViewModel<MusicItem> MusicListManager { get; }
+        private readonly IDialogService _dialogService;
+        public XamlRoot? ViewXamlRoot { get; set; }
 
-        public MusicItem SelectedMusic => MusicListManager.SelectedItem;
-
-        public XamlRoot PageXamlRoot
+        public MusicViewModel(IDialogService dialogService)
         {
-            set
+            _dialogService = dialogService;
+        }
+
+        protected override void Add()
+        {
+            string exampleAbc = @"X:1
+T:Example Scale
+M:4/4
+K:C
+C D E F | G A B c";
+
+            var newMusic = new MusicModel { Title = $"New Music {Items.Count + 1}", Content = exampleAbc };
+
+            Items.Add(newMusic);
+            SelectedItem = newMusic;
+        }
+
+        protected override async void Rename()
+        {
+            if(SelectedItem == null || ViewXamlRoot == null)
             {
-                if(value != null)
-                {
-                    MusicListManager.XamlRoot = value;
-                }
+                return;
+            }
+
+            var newName = await _dialogService.ShowRenameDialogAsync(SelectedItem.Title, ViewXamlRoot);
+            if(!string.IsNullOrWhiteSpace(newName))
+            {
+                SelectedItem.Title = newName;
             }
         }
 
-        public MusicViewModel()
+        protected override void Delete()
         {
-            MusicListManager = new ListItemManagerViewModel<MusicItem>((App.Current as App).CurrentProject.Musics);
+            if(SelectedItem == null)
+            {
+                return;
+            }
 
-            MusicListManager.SelectedItem = MusicListManager.Items.FirstOrDefault();
-            MusicListManager.OnItemSelected += (sender, item) => OnPropertyChanged(nameof(SelectedMusic));
+            Items.Remove(SelectedItem);
+            SelectedItem = Items.FirstOrDefault();
+        }
+
+        protected override void Save()
+        {
+            if(SelectedItem == null)
+            {
+                return;
+            }
+
+            Debug.WriteLine($"SAVING ITEM: {SelectedItem.Title}");
+        }
+
+        protected override void SaveAll()
+        {
+            Debug.WriteLine("SAVING ALL ITEMS...");
+            if(Items.Count == 0)
+            {
+                Debug.WriteLine("No items to save.");
+                return;
+            }
+
+            foreach(var note in Items)
+            {
+                Debug.WriteLine($" -> Saving: {note.Title}");
+            }
+            Debug.WriteLine("...DONE");
         }
     }
 }

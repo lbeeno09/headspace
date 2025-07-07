@@ -1,220 +1,137 @@
-using headspace.Models;
 using headspace.Models.Common;
 using headspace.ViewModels;
-using headspace.Views.Common;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Graphics.Canvas.Geometry;
+using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Shapes;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
+using System.ComponentModel;
 using Windows.Foundation;
 using Windows.UI;
 
 namespace headspace.Views
 {
-    public sealed partial class MoodboardPage : Page, ISavablePage
+    public sealed partial class MoodboardPage : Page
     {
-        private MoodboardViewModel ViewModel => DataContext as MoodboardViewModel;
-        private Polyline currentStroke;
-        private List<Point> currentPoints;
+        public MoodboardViewModel ViewModel { get; }
 
-        public class SerializableStroke
-        {
-            public List<Point> Points { get; set; } = new List<Point>();
-            public string StrokeColor { get; set; }
-            public double Thickness { get; set; }
-            public bool IsEraser { get; set; }
-        }
+        private readonly List<Point> _currentPoints = new();
+        private bool _isDrawing = false;
+        private Color _activeColor;
 
         public MoodboardPage()
         {
             this.InitializeComponent();
-            this.DataContext = new MoodboardViewModel();
 
-            ViewModel.ClearCanvasCommand.CanExecuteChanged += (sender, e) => ClearCanvasUI();
-            ViewModel.MoodboardListManager.OnItemSelected += MoodboardListManager_OnItemSelected;
-
-            this.Loaded += DrawingPage_Loaded;
+            ViewModel = ((App)Application.Current).Services.GetRequiredService<MoodboardViewModel>();
+            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         }
 
-        private void DrawingPage_Loaded(object sender, RoutedEventArgs e)
+        private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            LoadMoodboard(ViewModel.SelectedMoodboard);
+            if(e.PropertyName == nameof(ViewModel.SelectedItem))
+            {
+                MoodboardCanvas.Invalidate();
+            }
         }
-        private void MoodboardListManager_OnItemSelected(object sender, ProjectItemBase e)
+
+        private void MoodboardCanvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
         {
-            LoadMoodboard(e as MoodboardItem);
+            // 1. Draw already drawn lines
+            if(ViewModel.SelectedItem != null)
+            {
+                foreach(var stroke in ViewModel.SelectedItem.Strokes)
+                {
+                    args.DrawingSession.DrawGeometry(stroke.Geometry, stroke.Color, stroke.StrokeWidth);
+                }
+            }
+
+            // 2. draw live strokes
+            if(_isDrawing && _currentPoints.Count > 1)
+            {
+                var strokeWidth = ViewModel.IsEraserMode ? 20.0f : ViewModel.StrokeThickness;
+                for(int i = 0; i < _currentPoints.Count - 1; i++)
+                {
+                    args.DrawingSession.DrawLine(
+                        (float)_currentPoints[i].X, (float)_currentPoints[i].Y,
+                        (float)_currentPoints[i + 1].X, (float)_currentPoints[i + 1].Y,
+                        _activeColor, strokeWidth
+                        );
+                }
+            }
         }
 
         private void MoodboardCanvas_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
-            if(ViewModel.SelectedMoodboard == null)
+            if(ViewModel.SelectedItem == null)
             {
                 return;
             }
 
-            currentPoints = new List<Point>();
-            currentStroke = new Polyline
+            var properties = e.GetCurrentPoint(MoodboardCanvas).Properties;
+            if(properties.IsLeftButtonPressed)
             {
-                Stroke = ViewModel.IsEraserMode ? MoodboardCanvas.Background : ViewModel.PrimaryColor,
-                StrokeThickness = ViewModel.StrokeThickness,
-                StrokeEndLineCap = PenLineCap.Round,
-                StrokeStartLineCap = PenLineCap.Round,
-                StrokeLineJoin = PenLineJoin.Round
-            };
+                _activeColor = ViewModel.IsEraserMode ? Colors.White : ViewModel.PrimaryColor;
+            }
+            else if(properties.IsRightButtonPressed)
+            {
+                _activeColor = ViewModel.IsEraserMode ? Colors.White : ViewModel.SecondaryColor;
+            }
+            else
+            {
+                return;
+            }
 
-            currentPoints.Add(e.GetCurrentPoint(MoodboardCanvas).Position);
-            MoodboardCanvas.Children.Add(currentStroke);
-
-            e.Handled = true;
+            _isDrawing = true;
+            _currentPoints.Clear();
+            _currentPoints.Add(e.GetCurrentPoint(MoodboardCanvas).Position);
         }
 
         private void MoodboardCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
-            if(!e.Pointer.IsInContact || currentStroke == null || currentPoints == null)
+            if(!_isDrawing)
             {
                 return;
             }
 
-            currentPoints.Add(e.GetCurrentPoint(MoodboardCanvas).Position);
+            _currentPoints.Add(e.GetCurrentPoint(MoodboardCanvas).Position);
 
-            var newPointCollection = new PointCollection();
-            foreach(var point in currentPoints)
-            {
-                newPointCollection.Add(point);
-            }
-            currentStroke.Points = newPointCollection;
-
-            e.Handled = true;
+            MoodboardCanvas.Invalidate();
         }
 
         private void MoodboardCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
         {
-            if(currentStroke != null && currentPoints != null)
-            {
-                var newPointCollection = new PointCollection();
-                foreach(var point in currentPoints)
-                {
-                    newPointCollection.Add(point);
-                }
-
-                currentStroke.Points = newPointCollection;
-            }
-
-            currentStroke = null;
-            currentPoints = null;
-            e.Handled = true;
-        }
-
-        private void ClearCanvasUI()
-        {
-            MoodboardCanvas.Children.Clear();
-        }
-
-        public void SavePageContentToModel()
-        {
-            if(ViewModel.SelectedMoodboard == null)
+            if(!_isDrawing || _currentPoints.Count == 0 || ViewModel.SelectedItem == null)
             {
                 return;
             }
 
-            var serializableStrokes = new List<SerializableStroke>();
-            foreach(UIElement child in MoodboardCanvas.Children)
+            _isDrawing = false;
+            using(var pathBuilder = new CanvasPathBuilder(MoodboardCanvas))
             {
-                if(child is Polyline polyline)
+                pathBuilder.BeginFigure((float)_currentPoints[0].X, (float)_currentPoints[0].Y);
+                for(int i = 1; i < _currentPoints.Count; i++)
                 {
-                    string colorHex = (polyline.Stroke as SolidColorBrush)?.Color.ToString() ?? Colors.Black.ToString();
-
-                    serializableStrokes.Add(new SerializableStroke
-                    {
-                        Points = polyline.Points.ToList(),
-                        StrokeColor = colorHex,
-                        Thickness = polyline.StrokeThickness,
-                        IsEraser = (polyline.Stroke as SolidColorBrush)?.Color == ((SolidColorBrush)MoodboardCanvas.Background)?.Color
-                    });
+                    pathBuilder.AddLine((float)_currentPoints[i].X, (float)_currentPoints[i].Y);
                 }
-            }
+                pathBuilder.EndFigure(CanvasFigureLoop.Open);
 
-            ViewModel.SelectedMoodboard.Content = JsonSerializer.Serialize(serializableStrokes);
-            ViewModel.SelectedMoodboard.LastModified = DateTime.Now;
-            System.Diagnostics.Debug.WriteLine($"Drawing data serialized for: {ViewModel.SelectedMoodboard.ToString}. Size: {ViewModel.SelectedMoodboard.Content.Length} chars");
-        }
-
-        private void LoadMoodboard(MoodboardItem moodboardItem)
-        {
-            ClearCanvasUI();
-
-            if(moodboardItem == null || string.IsNullOrEmpty(moodboardItem.Content))
-            {
-                return;
-            }
-
-            try
-            {
-                var loadedStrokes = JsonSerializer.Deserialize<List<SerializableStroke>>(moodboardItem.Content);
-                if(loadedStrokes != null)
+                var geometry = CanvasGeometry.CreatePath(pathBuilder);
+                var stroke = new StrokeData
                 {
-                    foreach(var sStroke in loadedStrokes)
-                    {
-                        if(sStroke.Points == null || sStroke.Points.Count == 0)
-                        {
-                            continue;
-                        }
-
-                        var polyline = new Polyline
-                        {
-                            Stroke = new SolidColorBrush(ParseColor(sStroke.StrokeColor)),
-                            StrokeThickness = sStroke.Thickness,
-                            StrokeEndLineCap = PenLineCap.Round,
-                            StrokeStartLineCap = PenLineCap.Round,
-                            StrokeLineJoin = PenLineJoin.Round
-                        };
-                        polyline.Points = new PointCollection();
-                        foreach(Point point in sStroke.Points)
-                        {
-                            polyline.Points.Add(point);
-                        }
-                        MoodboardCanvas.Children.Add(polyline);
-                    }
-                    System.Diagnostics.Debug.WriteLine($"Loaded {loadedStrokes.Count} strokes for: {moodboardItem.Title}");
-                }
-            }
-            catch(JsonException ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error deserializing drawing data for {moodboardItem.Title}: {ex.Message}");
-
-            }
-            catch(Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Unexpected error loading drawing data for {moodboardItem.Title}: {ex.Message}");
-            }
-        }
-
-        private Color ParseColor(string hexColor)
-        {
-            if(string.IsNullOrEmpty(hexColor) || hexColor.Length != 9 || !hexColor.StartsWith("#"))
-            {
-                return Colors.Black;
+                    Geometry = geometry,
+                    Color = _activeColor,
+                    StrokeWidth = ViewModel.IsEraserMode ? 20.0f : ViewModel.StrokeThickness
+                };
+                ViewModel.SelectedItem.Strokes.Add(stroke);
             }
 
-            try
-            {
-                byte a = byte.Parse(hexColor.Substring(1, 2), System.Globalization.NumberStyles.HexNumber);
-                byte r = byte.Parse(hexColor.Substring(3, 2), System.Globalization.NumberStyles.HexNumber);
-                byte g = byte.Parse(hexColor.Substring(5, 2), System.Globalization.NumberStyles.HexNumber);
-                byte b = byte.Parse(hexColor.Substring(7, 2), System.Globalization.NumberStyles.HexNumber);
+            _currentPoints.Clear();
 
-                return Color.FromArgb(a, r, g, b);
-            }
-            catch
-            {
-                return Colors.Red;
-            }
+            MoodboardCanvas.Invalidate();
         }
     }
 }

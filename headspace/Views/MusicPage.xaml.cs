@@ -1,36 +1,64 @@
 using headspace.ViewModels;
-using headspace.Views.Common;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.Web.WebView2.Core;
 using System;
+using System.ComponentModel;
+using System.IO;
+using System.Text.Json;
 
 namespace headspace.Views
 {
-    public sealed partial class MusicPage : Page, ISavablePage
+    public sealed partial class MusicPage : Page
     {
-        private MusicViewModel ViewModel => DataContext as MusicViewModel;
+        public MusicViewModel ViewModel { get; }
+        private bool _isWebViewReady = false;
 
         public MusicPage()
         {
             this.InitializeComponent();
-            this.DataContext = new MusicViewModel();
 
+            ViewModel = ((App)Application.Current).Services.GetRequiredService<MusicViewModel>();
+            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
             this.Loaded += (s, e) =>
             {
-                if(ViewModel != null)
-                {
-                    ViewModel.PageXamlRoot = this.XamlRoot;
-                }
+                ViewModel.ViewXamlRoot = this.XamlRoot;
             };
+
+            string htmlPath = Path.Combine(AppContext.BaseDirectory, "Assets", "MusicRenderer", "renderer.html");
+            MusicWebView.Source = new Uri(htmlPath);
+
+            MusicWebView.NavigationCompleted += MusicWebView_NavigationCompleted;
         }
 
-        public void SavePageContentToModel()
+        private void MusicWebView_NavigationCompleted(WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
         {
-            if(ViewModel.SelectedMusic != null)
-            {
-                ViewModel.SelectedMusic.LastModified = DateTime.Now;
+            _isWebViewReady = true;
 
-                System.Diagnostics.Debug.WriteLine($"Musics page content updated in model for {ViewModel.SelectedMusic.Title}");
+            UpdateMusicPreview();
+        }
+
+        private async void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if(e.PropertyName is nameof(ViewModel.SelectedItem) or "SelectedItem.Content")
+            {
+                UpdateMusicPreview();
             }
+        }
+
+        private async void UpdateMusicPreview()
+        {
+            if(ViewModel.SelectedItem == null)
+            {
+                return;
+            }
+
+            string abcString = ViewModel.SelectedItem.Content ?? "";
+            string jsonString = JsonSerializer.Serialize(abcString);
+            string script = $"renderAbc({jsonString})";
+
+            await MusicWebView.CoreWebView2.ExecuteScriptAsync(script);
         }
     }
 }
