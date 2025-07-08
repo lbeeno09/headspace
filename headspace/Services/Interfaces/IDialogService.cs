@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml;
+﻿using headspace.Utilities;
+using Microsoft.UI.Xaml;
 using System.Threading.Tasks;
 
 namespace headspace.Services.Interfaces

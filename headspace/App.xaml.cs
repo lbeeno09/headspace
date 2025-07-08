@@ -26,6 +26,9 @@ namespace headspace
             MainWindow = m_window;
             m_window.Closed += OnMainWindowClosed;
 
+            var settingsService = Services.GetRequiredService<ISettingsService>();
+            settingsService.ApplyTheme();
+
             m_window.Activate();
         }
 
@@ -44,6 +47,7 @@ namespace headspace
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<IFilePickerService, FilePickerService>();
             services.AddSingleton<IProjectService, ProjectService>();
+            services.AddSingleton<ISettingsService, SettingService>();
 
             // ViewModels
             services.AddSingleton<MainViewModel>();

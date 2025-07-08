@@ -16,7 +16,8 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <MenuBar Grid.Row="0" x:Name="AppMenuBar">
+        <MenuBar Grid.Row="0" x:Name="AppMenuBar"
+                 Background="{ThemeResource LayerFillColorDefaultBrush}">
             <MenuBarItem Title="File">
                 <MenuFlyoutItem Text="New" Command="{x:Bind ViewModel.NewProjectCommand}">
                     <MenuFlyoutItem.KeyboardAccelerators>
@@ -55,6 +56,7 @@
         <NavigationView Grid.Row="1"
                         x:Name="SidebarView" 
                         PaneDisplayMode="LeftCompact"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         IsBackButtonVisible="Collapsed"
                         IsSettingsVisible="True"
                         ItemInvoked="NavView_ItemInvoked">

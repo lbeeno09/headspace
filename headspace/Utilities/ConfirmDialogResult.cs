@@ -1,4 +1,4 @@
-﻿namespace headspace.Services
+﻿namespace headspace.Utilities
 {
     public enum ConfirmDialogResult
     {
