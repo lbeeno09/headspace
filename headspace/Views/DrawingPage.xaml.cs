@@ -1,3 +1,4 @@
+using headspace.Models;
 using headspace.Models.Common;
 using headspace.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +9,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Numerics;
@@ -24,6 +26,8 @@ namespace headspace.Views
         private bool _isDrawing = false;
         private Color _activeColor;
 
+        private DrawingModel? _lastSelectedDrawing;
+
         public DrawingPage()
         {
             this.InitializeComponent();
@@ -34,7 +38,55 @@ namespace headspace.Views
 
         private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if(e.PropertyName is nameof(ViewModel.SelectedItem) or nameof(ViewModel.ActiveLayer))
+            if(e.PropertyName == nameof(ViewModel.SelectedItem))
+            {
+                // Unsub from previous item's layer events
+                if(_lastSelectedDrawing?.Layers != null)
+                {
+                    _lastSelectedDrawing.Layers.CollectionChanged -= Layers_CollectionChanged;
+                    foreach(var layer in _lastSelectedDrawing.Layers)
+                    {
+                        layer.PropertyChanged -= Layer_PropertyChanged;
+                    }
+                }
+
+                // sub to new item's layer events
+                if(ViewModel.SelectedItem?.Layers != null)
+                {
+                    ViewModel.SelectedItem.Layers.CollectionChanged += Layers_CollectionChanged;
+                    foreach(var layer in ViewModel.SelectedItem.Layers)
+                    {
+                        layer.PropertyChanged += Layer_PropertyChanged;
+                    }
+                }
+
+                // remember current item for next item change
+                _lastSelectedDrawing = ViewModel.SelectedItem;
+                DrawingCanvas.Invalidate();
+            }
+        }
+
+        private void Layers_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if(e.OldItems != null)
+            {
+                foreach(LayerModel item in e.OldItems)
+                {
+                    item.PropertyChanged -= Layer_PropertyChanged;
+                }
+            }
+            if(e.NewItems != null)
+            {
+                foreach(LayerModel item in e.NewItems)
+                {
+                    item.PropertyChanged += Layer_PropertyChanged;
+                }
+            }
+        }
+
+        private void Layer_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if(e.PropertyName == nameof(LayerModel.IsVisible))
             {
                 DrawingCanvas.Invalidate();
             }

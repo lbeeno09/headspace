@@ -19,7 +19,7 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="*" />
             <ColumnDefinition Width="4*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
@@ -52,11 +52,12 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <CommandBar Grid.Row="0" DefaultLabelPosition="Right">
-                <AppBarButton Icon="Add" Label="Add Layer" Command="{x:Bind ViewModel.AddLayerCommand}" />
-                <AppBarButton Icon="Delete" Label="Delete Layer" Command="{x:Bind ViewModel.DeleteLayerCommand}" />
+                <AppBarButton Icon="Add" Command="{x:Bind ViewModel.AddLayerCommand}" />
+                <AppBarButton Icon="Delete" Command="{x:Bind ViewModel.DeleteLayerCommand}" />
             </CommandBar>
             <ListView Grid.Row="1"
                       ItemsSource="{x:Bind ViewModel.SelectedItem.Layers, Mode=OneWay, FallbackValue={x:Null}}"
@@ -74,6 +75,10 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
+            <CommandBar Grid.Row="2" DefaultLabelPosition="Right">
+                <AppBarButton Icon="Up" Command="{x:Bind ViewModel.MoveLayerUpCommand}" />
+                <AppBarButton Icon="Download" Command="{x:Bind ViewModel.MoveLayerDownCommand}" />
+            </CommandBar>
         </Grid>
     </Grid>
 </Page>

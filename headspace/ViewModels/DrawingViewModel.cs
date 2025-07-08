@@ -50,8 +50,8 @@ namespace headspace.ViewModels
                 return;
             }
 
-            var newLayer = new LayerModel { Name = $"Layer {SelectedItem.Layers.Count + 1}" };
-            SelectedItem.Layers.Add(newLayer);
+            var newLayer = new LayerModel { Name = $"Layer {SelectedItem.Layers.Count}" };
+            SelectedItem.Layers.Insert(0, newLayer);
             ActiveLayer = newLayer;
         }
 
@@ -67,10 +67,40 @@ namespace headspace.ViewModels
             ActiveLayer = SelectedItem.Layers.FirstOrDefault();
         }
 
+        [RelayCommand]
+        private void MoveLayerUp()
+        {
+            if(ActiveLayer == null || SelectedItem == null)
+            {
+                return;
+            }
+
+            int index = SelectedItem.Layers.IndexOf(ActiveLayer);
+            if(index > 0)
+            {
+                SelectedItem.Layers.Move(index, index - 1);
+            }
+        }
+
+        [RelayCommand]
+        private void MoveLayerDown()
+        {
+            if(ActiveLayer == null || SelectedItem == null)
+            {
+                return;
+            }
+
+            int index = SelectedItem.Layers.IndexOf(ActiveLayer);
+            if(index < SelectedItem.Layers.Count - 1)
+            {
+                SelectedItem.Layers.Move(index, index + 1);
+            }
+        }
+
         protected override void Add()
         {
             var newDrawing = new DrawingModel { Title = $"New Drawing {Items.Count + 1}" };
-            var initialLayer = new LayerModel { Name = "Base Layer" };
+            var initialLayer = new LayerModel { Name = "Layer 0" };
 
             Items.Add(newDrawing);
             newDrawing.Layers.Add(initialLayer);
