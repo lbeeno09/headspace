@@ -43,6 +43,10 @@ Music: Music Sheet for musical ideas
 	- More Shortcuts
 	- Increase menubar style
 	- Tags for individual items
+	- Export for each component to appropriate format
+
+- Home
+	- Make it an overview or each page
 
 - Notes
 	- (Maybe) Add Syntax Highlighting
@@ -51,27 +55,37 @@ Music: Music Sheet for musical ideas
 	- Word like toolbar
 	- Adjustable Document size
 	- Variable font size
+	- Adjustablel Font color
 
 - Screenplay
+	- Change screenplay to font ratio (right now its too small)
 	- tab/enter to move between modes(e.g. Dialog, Character, Explanation)
 	- adjustable script size
+	- Indicator (on top corner) to change the type of section
 
 - Drawing
 	- Image pasting
 	- Resizable canvas
+	- Toolbar
 
 - Moodboard
 	- Image pasting
 	- Resizable canvas
+	- Toolbar
 
 - Storyboard
 	- Image pasting
 	- Resizable canvas
 	- Storyboard squares
+	- Toolbar
 
 - Music
 	- Apply Changes on text edit
 	- Play the notes with simple sound MIDI
+	- Toolbar to help how to write
 
 - Preference
-	- Themes and Style
+	- Style
+	- default name
+	- default save location
+	
