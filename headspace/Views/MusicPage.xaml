@@ -32,6 +32,7 @@
                  TextWrapping="Wrap"
                  PlaceholderText="Select a sheet and start typing abc notation..."
                  VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                 PreviewKeyDown="Editor_PreviewKeyDown"
                  IsEnabled="{Binding ViewModel.SelectedItem, Converter={StaticResource NullToBooleanConverter}}" />
 
         <!-- Music Preview -->

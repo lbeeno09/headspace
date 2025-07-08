@@ -6,5 +6,6 @@ namespace headspace.Services.Interfaces
     public interface IDialogService
     {
         Task<string?> ShowRenameDialogAsync(string currentName, XamlRoot xamlRoot);
+        Task<ConfirmDialogResult> ShowConfirmUnsavedChangesDialogAsync();
     }
 }

@@ -2,19 +2,24 @@
 using headspace.Services.Interfaces;
 using headspace.ViewModels.Common;
 using Microsoft.UI.Xaml;
-using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace headspace.ViewModels
 {
     public class MusicViewModel : ViewModelBase<MusicModel>
     {
+        private readonly IProjectService _projectService;
         private readonly IDialogService _dialogService;
+
         public XamlRoot? ViewXamlRoot { get; set; }
 
-        public MusicViewModel(IDialogService dialogService)
+        public MusicViewModel(IDialogService dialogService, IProjectService projectService)
         {
             _dialogService = dialogService;
+            _projectService = projectService;
+
+            Items = _projectService.CurrentProject.Musics;
         }
 
         protected override void Add()
@@ -56,30 +61,20 @@ C D E F | G A B c";
             SelectedItem = Items.FirstOrDefault();
         }
 
-        protected override void Save()
+        protected override async Task Save()
         {
             if(SelectedItem == null)
             {
-                return;
+                await _projectService.SaveItemAsync(SelectedItem);
             }
-
-            Debug.WriteLine($"SAVING ITEM: {SelectedItem.Title}");
         }
 
-        protected override void SaveAll()
+        protected override async Task SaveAll()
         {
-            Debug.WriteLine("SAVING ALL ITEMS...");
-            if(Items.Count == 0)
+            foreach(var music in Items.Where(i => i.IsDirty))
             {
-                Debug.WriteLine("No items to save.");
-                return;
+                await _projectService.SaveItemAsync(music);
             }
-
-            foreach(var note in Items)
-            {
-                Debug.WriteLine($" -> Saving: {note.Title}");
-            }
-            Debug.WriteLine("...DONE");
         }
     }
 }

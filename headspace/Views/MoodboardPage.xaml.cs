@@ -9,6 +9,8 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
+using System.Numerics;
 using Windows.Foundation;
 using Windows.UI;
 
@@ -45,7 +47,24 @@ namespace headspace.Views
             {
                 foreach(var stroke in ViewModel.SelectedItem.Strokes)
                 {
-                    args.DrawingSession.DrawGeometry(stroke.Geometry, stroke.Color, stroke.StrokeWidth);
+                    // if geometry is not cached, create from points
+                    if(stroke.CachedGeometry == null && stroke.Points.Count > 1)
+                    {
+                        using var pathBuilder = new CanvasPathBuilder(sender);
+                        pathBuilder.BeginFigure(stroke.Points[0]);
+                        for(int i = 1; i < stroke.Points.Count; i++)
+                        {
+                            pathBuilder.AddLine(stroke.Points[i]);
+                        }
+                        pathBuilder.EndFigure(CanvasFigureLoop.Open);
+
+                        stroke.CachedGeometry = CanvasGeometry.CreatePath(pathBuilder);
+                    }
+
+                    if(stroke.CachedGeometry != null)
+                    {
+                        args.DrawingSession.DrawGeometry(stroke.CachedGeometry, stroke.Color, stroke.StrokeWidth);
+                    }
                 }
             }
 
@@ -104,30 +123,22 @@ namespace headspace.Views
 
         private void MoodboardCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
         {
-            if(!_isDrawing || _currentPoints.Count == 0 || ViewModel.SelectedItem == null)
+            if(!_isDrawing || _currentPoints.Count < 2 || ViewModel.SelectedItem == null)
             {
                 return;
             }
 
             _isDrawing = false;
-            using(var pathBuilder = new CanvasPathBuilder(MoodboardCanvas))
-            {
-                pathBuilder.BeginFigure((float)_currentPoints[0].X, (float)_currentPoints[0].Y);
-                for(int i = 1; i < _currentPoints.Count; i++)
-                {
-                    pathBuilder.AddLine((float)_currentPoints[i].X, (float)_currentPoints[i].Y);
-                }
-                pathBuilder.EndFigure(CanvasFigureLoop.Open);
 
-                var geometry = CanvasGeometry.CreatePath(pathBuilder);
-                var stroke = new StrokeData
-                {
-                    Geometry = geometry,
-                    Color = _activeColor,
-                    StrokeWidth = ViewModel.IsEraserMode ? 20.0f : ViewModel.StrokeThickness
-                };
-                ViewModel.SelectedItem.Strokes.Add(stroke);
-            }
+            var pointsToSave = _currentPoints.Select(p => new Vector2((float)p.X, (float)p.Y)).ToList();
+            var stroke = new StrokeData
+            {
+                Points = pointsToSave,
+                Color = _activeColor,
+                StrokeWidth = ViewModel.IsEraserMode ? 20.0f : ViewModel.StrokeThickness
+            };
+
+            ViewModel.SelectedItem.Strokes.Add(stroke);
 
             _currentPoints.Clear();
 

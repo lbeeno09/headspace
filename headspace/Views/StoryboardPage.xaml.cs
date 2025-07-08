@@ -9,6 +9,8 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
+using System.Numerics;
 using Windows.Foundation;
 using Windows.UI;
 
@@ -40,19 +42,34 @@ namespace headspace.Views
 
         private void StoryboardCanvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
         {
-            // 1. Draw already drawn lines
-            if(ViewModel.SelectedItem != null)
+            if(ViewModel.SelectedItem == null || ViewModel.ActivePanel == null)
             {
-                foreach(var layer in ViewModel.SelectedItem.Panels)
+                return;
+            }
+
+            int activePanelIndex = ViewModel.SelectedItem.Panels.IndexOf(ViewModel.ActivePanel);
+
+
+            // 1. onion skinning
+            if(activePanelIndex > 0)
+            {
+                var previousPanel = ViewModel.SelectedItem.Panels[activePanelIndex - 1];
+                using(args.DrawingSession.CreateLayer(0.3f))
                 {
-                    foreach(var stroke in layer.Strokes)
+                    foreach(var stroke in previousPanel.Strokes)
                     {
-                        args.DrawingSession.DrawGeometry(stroke.Geometry, stroke.Color, stroke.StrokeWidth);
+                        DrawStroke(sender, args, stroke);
                     }
                 }
             }
 
-            // 2. draw live strokes
+            // 2. Draw already drawn lines
+            foreach(var stroke in ViewModel.ActivePanel.Strokes)
+            {
+                DrawStroke(sender, args, stroke);
+            }
+
+            // 3. draw live strokes
             if(_isDrawing && _currentPoints.Count > 1)
             {
                 var strokeWidth = ViewModel.IsEraserMode ? 20.0f : ViewModel.StrokeThickness;
@@ -64,6 +81,27 @@ namespace headspace.Views
                         _activeColor, strokeWidth
                         );
                 }
+            }
+        }
+
+        private void DrawStroke(CanvasControl sender, CanvasDrawEventArgs args, StrokeData stroke)
+        {
+            if(stroke.CachedGeometry == null && stroke.Points.Count > 1)
+            {
+                using var pathBuilder = new CanvasPathBuilder(sender);
+                pathBuilder.BeginFigure(stroke.Points[0]);
+                for(int i = 1; i < stroke.Points.Count; i++)
+                {
+                    pathBuilder.AddLine(stroke.Points[i]);
+                }
+                pathBuilder.EndFigure(CanvasFigureLoop.Open);
+
+                stroke.CachedGeometry = CanvasGeometry.CreatePath(pathBuilder);
+            }
+
+            if(stroke.CachedGeometry != null)
+            {
+                args.DrawingSession.DrawGeometry(stroke.CachedGeometry, stroke.Color, stroke.StrokeWidth);
             }
         }
 
@@ -108,30 +146,23 @@ namespace headspace.Views
 
         private void StoryboardCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
         {
-            if(!_isDrawing || _currentPoints.Count == 0 || ViewModel.ActivePanel == null)
+            if(!_isDrawing || _currentPoints.Count < 2 || ViewModel.ActivePanel == null)
             {
                 return;
             }
 
             _isDrawing = false;
-            using(var pathBuilder = new CanvasPathBuilder(StoryboardCanvas))
-            {
-                pathBuilder.BeginFigure((float)_currentPoints[0].X, (float)_currentPoints[0].Y);
-                for(int i = 1; i < _currentPoints.Count; i++)
-                {
-                    pathBuilder.AddLine((float)_currentPoints[i].X, (float)_currentPoints[i].Y);
-                }
-                pathBuilder.EndFigure(CanvasFigureLoop.Open);
 
-                var geometry = CanvasGeometry.CreatePath(pathBuilder);
-                var stroke = new StrokeData
-                {
-                    Geometry = geometry,
-                    Color = _activeColor,
-                    StrokeWidth = ViewModel.IsEraserMode ? 20.0f : ViewModel.StrokeThickness
-                };
-                ViewModel.ActivePanel.Strokes.Add(stroke);
-            }
+
+            var pointsToSave = _currentPoints.Select(p => new Vector2((float)p.X, (float)p.Y)).ToList();
+            var stroke = new StrokeData
+            {
+                Points = pointsToSave,
+                Color = _activeColor,
+                StrokeWidth = ViewModel.IsEraserMode ? 20.0f : ViewModel.StrokeThickness
+            };
+
+            ViewModel.ActivePanel.Strokes.Add(stroke);
 
             _currentPoints.Clear();
 

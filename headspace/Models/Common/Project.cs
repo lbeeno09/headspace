@@ -11,12 +11,12 @@ namespace headspace.Models.Common
 
         public bool IsDirty =>
             Notes.Any(n => n.IsDirty) ||
-            Documents.Any(d => d.IsDirty) ||
-            Screenplays.Any(s => s.IsDirty) ||
-            Drawings.Any(d => d.IsDirty) ||
-            Moodboards.Any(m => m.IsDirty) ||
-            Storyboards.Any(s => s.IsDirty) ||
-            Musics.Any(m => m.IsDirty);
+            Documents.Any(n => n.IsDirty) ||
+            Screenplays.Any(n => n.IsDirty) ||
+            Drawings.Any(n => n.IsDirty) ||
+            Moodboards.Any(n => n.IsDirty) ||
+            Storyboards.Any(n => n.IsDirty) ||
+            Musics.Any(n => n.IsDirty);
 
         public ObservableCollection<NoteModel> Notes { get; set; } = new ObservableCollection<NoteModel>();
         public ObservableCollection<DocumentModel> Documents { get; set; } = new ObservableCollection<DocumentModel>();

@@ -4,7 +4,7 @@ namespace headspace.Services.Interfaces
 {
     public interface IFilePickerService
     {
-        Task<string?> PickSaveFileAsync();
-        Task<string?> PickOpenFileAsync();
+        Task<string?> PickSaveProjectAsync();
+        Task<string?> PickOpenProjectAsync();
     }
 }

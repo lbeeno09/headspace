@@ -2,9 +2,11 @@ using headspace.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.Web.WebView2.Core;
 using System;
 using System.ComponentModel;
+using Windows.System;
 
 namespace headspace.Views
 {
@@ -61,5 +63,18 @@ namespace headspace.Views
             NoteWebView.NavigateToString(htmlText);
         }
 
+        private void Editor_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if(e.Key == VirtualKey.Tab)
+            {
+                var editor = sender as TextBox;
+                var cursorPosition = editor.SelectionStart;
+
+                editor.Text = editor.Text.Insert(cursorPosition, "\t");
+                editor.SelectionStart = cursorPosition + 1;
+
+                e.Handled = true;
+            }
+        }
     }
 }

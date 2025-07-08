@@ -3,7 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using System.ComponentModel;
+using Windows.System;
 
 namespace headspace.Views
 {
@@ -22,20 +24,32 @@ namespace headspace.Views
             {
                 ViewModel.ViewXamlRoot = this.XamlRoot;
             };
+            this.Loaded += DocumentPage_Loaded;
+
             DocumentEditor.TextChanged += DocumentEditor_TextChanged;
+        }
+
+        private void DocumentPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            LoadDocumentContent();
         }
 
         private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if(e.PropertyName == nameof(ViewModel.SelectedItem))
             {
-                _isProgrammaticChange = true;
-
-                string rtfContent = ViewModel.SelectedItem?.Content ?? string.Empty;
-                DocumentEditor.Document.SetText(TextSetOptions.FormatRtf, rtfContent);
-
-                _isProgrammaticChange = false;
+                LoadDocumentContent();
             }
+        }
+
+        private void LoadDocumentContent()
+        {
+            _isProgrammaticChange = true;
+
+            string rtfContent = ViewModel.SelectedItem?.Content ?? string.Empty;
+            DocumentEditor.Document.SetText(TextSetOptions.FormatRtf, rtfContent);
+
+            _isProgrammaticChange = false;
         }
 
         private void DocumentEditor_TextChanged(object sender, RoutedEventArgs e)
@@ -47,6 +61,16 @@ namespace headspace.Views
             }
         }
 
+        private void Editor_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if(e.Key == VirtualKey.Tab)
+            {
+                var editor = sender as RichEditBox;
+                editor.Document.Selection.TypeText("\t");
+
+                e.Handled = true;
+            }
+        }
 
         // --- Formatting Buttons ---
         private void BoldButton_Click(object sender, RoutedEventArgs e)

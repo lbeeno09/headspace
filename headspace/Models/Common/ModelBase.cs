@@ -1,18 +1,31 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 
 namespace headspace.Models.Common
 {
     public abstract partial class ModelBase : ObservableObject
     {
-        [ObservableProperty]
-        private string? _title;
+        public Guid Id { get; set; } = Guid.NewGuid();
 
-        private bool _isDirty = false;
-        public bool IsDirty
+        private string? _title;
+        public string? Title
         {
-            get => _isDirty;
-            set => SetProperty(ref _isDirty, value);
+            get => _title;
+            set => SetPropertyAndMarkDirty(ref _title, value);
+        }
+
+        [JsonIgnore]
+        public bool IsDirty { get; set; }
+
+        [JsonIgnore]
+        // Which save folder to use
+        public abstract string FilePathPrefix { get; }
+
+        protected ModelBase()
+        {
+            IsDirty = true;
         }
 
         protected bool SetPropertyAndMarkDirty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)

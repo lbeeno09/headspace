@@ -1,13 +1,11 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 
 namespace headspace.Models.Common
 {
-    public partial class PanelModel : ObservableObject
+    public partial class PanelModel : ModelBase
     {
-        [ObservableProperty]
-        private string? _title;
-
         public ObservableCollection<StrokeData> Strokes { get; set; } = new();
+
+        public override string FilePathPrefix => "storyboard_panels";
     }
 }

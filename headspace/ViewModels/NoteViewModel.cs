@@ -4,10 +4,11 @@ using headspace.ViewModels.Common;
 using Microsoft.UI.Xaml;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace headspace.ViewModels
 {
-    public class NoteViewModel : ViewModelBase<NoteModel>
+    public partial class NoteViewModel : ViewModelBase<NoteModel>
     {
         private readonly IProjectService _projectService;
         private readonly IDialogService _dialogService;
@@ -55,30 +56,24 @@ namespace headspace.ViewModels
             SelectedItem = Items.FirstOrDefault();
         }
 
-        protected override void Save()
+        protected override async Task Save()
         {
             if(SelectedItem == null)
             {
                 return;
             }
 
-            Debug.WriteLine($"SAVING ITEM: {SelectedItem.Title}");
+            Debug.WriteLine("Saving Note's particular item");
+
+            await _projectService.SaveItemAsync(SelectedItem);
         }
 
-        protected override void SaveAll()
+        protected override async Task SaveAll()
         {
-            Debug.WriteLine("SAVING ALL ITEMS...");
-            if(Items.Count == 0)
+            foreach(var note in Items.Where(i => i.IsDirty))
             {
-                Debug.WriteLine("No items to save.");
-                return;
+                await _projectService.SaveItemAsync(note);
             }
-
-            foreach(var note in Items)
-            {
-                Debug.WriteLine($" -> Saving: {note.Title}");
-            }
-            Debug.WriteLine("...DONE");
         }
     }
 }

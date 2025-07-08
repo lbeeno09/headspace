@@ -33,6 +33,7 @@
                  TextWrapping="Wrap"
                  PlaceholderText="Select a note and start typing markdown..."
                  VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                 PreviewKeyDown="Editor_PreviewKeyDown"
                  IsEnabled="{Binding ViewModel.SelectedItem, Converter={StaticResource NullToBooleanConverter}}" />
 
         <!-- Markdown Preview -->

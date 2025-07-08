@@ -49,11 +49,16 @@
                                   PointerReleased="StoryboardCanvas_PointerReleased" />
 
             <Grid Grid.Row="2">
-                <CommandBar Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                
+                <CommandBar Grid.Column="1" Background="Transparent" HorizontalAlignment="Right">
                     <AppBarButton Icon="Add" Label="Add Panel" Command="{x:Bind ViewModel.AddPanelCommand}" />
                     <AppBarButton Icon="Delete" Label="Delete Panel" Command="{x:Bind ViewModel.DeletePanelCommand}" />
                 </CommandBar>
-                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                <ScrollViewer Grid.Column="0" HorizontalAlignment="Left" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                     <ListView ItemsSource="{x:Bind ViewModel.SelectedItem.Panels, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.ActivePanel, Mode=TwoWay}"
                               SelectionMode="Single">

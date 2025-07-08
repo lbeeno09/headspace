@@ -13,7 +13,7 @@ namespace headspace.Services.Implementations
         {
             var dialog = new RenameDialog(currentName)
             {
-                XamlRoot = xamlRoot,
+                XamlRoot = App.MainWindow.Content.XamlRoot,
                 Title = "Rename Item",
                 PrimaryButtonText = "Rename",
                 CloseButtonText = "Cancel"
@@ -27,5 +27,28 @@ namespace headspace.Services.Implementations
 
             return null;
         }
+
+        public async Task<ConfirmDialogResult> ShowConfirmUnsavedChangesDialogAsync()
+        {
+            var dialog = new ContentDialog
+            {
+                XamlRoot = App.MainWindow.Content.XamlRoot,
+                Title = "Unsaved Changes",
+                Content = "You have unsaved changes. Do you want to save your project before proceeding?",
+                PrimaryButtonText = "Save",
+                SecondaryButtonText = "Don't Save",
+                CloseButtonText = "Cancel"
+            };
+
+            var result = await dialog.ShowAsync();
+
+            return result switch
+            {
+                ContentDialogResult.Primary => ConfirmDialogResult.Save,
+                ContentDialogResult.Secondary => ConfirmDialogResult.Discard,
+                _ => ConfirmDialogResult.Cancel,
+            };
+        }
+
     }
 }

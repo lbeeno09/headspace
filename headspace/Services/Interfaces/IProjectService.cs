@@ -7,7 +7,9 @@ namespace headspace.Services.Interfaces
     {
         Project CurrentProject { get; }
 
-        void CreateNewProject();
+        Task<bool> CreateNewProject(bool isInitialLaunch = false);
+
+        Task SaveItemAsync(ModelBase item);
         Task SaveProjectAsync();
         Task SaveProjectAsAsync();
 

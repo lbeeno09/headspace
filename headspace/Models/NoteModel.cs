@@ -10,5 +10,7 @@ namespace headspace.Models
             get => _content;
             set => SetPropertyAndMarkDirty(ref _content, value);
         }
+
+        public override string FilePathPrefix => "note";
     }
 }

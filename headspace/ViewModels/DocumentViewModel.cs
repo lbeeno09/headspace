@@ -2,19 +2,24 @@
 using headspace.Services.Interfaces;
 using headspace.ViewModels.Common;
 using Microsoft.UI.Xaml;
-using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace headspace.ViewModels
 {
     public partial class DocumentViewModel : ViewModelBase<DocumentModel>
     {
         private readonly IDialogService _dialogService;
+        private readonly IProjectService _projectService;
+
         public XamlRoot? ViewXamlRoot { get; set; }
 
-        public DocumentViewModel(IDialogService dialogService)
+        public DocumentViewModel(IDialogService dialogService, IProjectService projectService)
         {
             _dialogService = dialogService;
+            _projectService = projectService;
+
+            Items = _projectService.CurrentProject.Documents;
         }
 
         protected override void Add()
@@ -50,30 +55,20 @@ namespace headspace.ViewModels
             SelectedItem = Items.FirstOrDefault();
         }
 
-        protected override void Save()
+        protected override async Task Save()
         {
             if(SelectedItem == null)
             {
-                return;
+                await _projectService.SaveItemAsync(SelectedItem);
             }
-
-            Debug.WriteLine($"SAVING ITEM: {SelectedItem.Title}");
         }
 
-        protected override void SaveAll()
+        protected override async Task SaveAll()
         {
-            Debug.WriteLine("SAVING ALL ITEMS...");
-            if(Items.Count == 0)
+            foreach(var document in Items.Where(i => i.IsDirty))
             {
-                Debug.WriteLine("No items to save.");
-                return;
+                await _projectService.SaveItemAsync(document);
             }
-
-            foreach(var note in Items)
-            {
-                Debug.WriteLine($" -> Saving: {note.Title}");
-            }
-            Debug.WriteLine("...DONE");
         }
     }
 }

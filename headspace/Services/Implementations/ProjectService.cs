@@ -1,8 +1,8 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using headspace.Models.Common;
+﻿using headspace.Models.Common;
 using headspace.Services.Interfaces;
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -10,124 +10,170 @@ using System.Threading.Tasks;
 
 namespace headspace.Services.Implementations
 {
-    public partial class ProjectService : ObservableObject, IProjectService
+    public partial class ProjectService : IProjectService
     {
-        [ObservableProperty]
-        private Project _currentProject;
-
-        public string? ProjectFilePath { get; private set; }
+        public Project CurrentProject { get; private set; }
+        public string? ProjectFolderPath { get; private set; }
         private bool _isTemporaryProject;
 
-        private readonly IFilePickerService _filePickerService;
 
-        public ProjectService(IFilePickerService filePickerService)
+        private readonly IFilePickerService _filePickerService;
+        private readonly IDialogService _dialogService;
+
+        public ProjectService(IFilePickerService filePickerService, IDialogService dialogService)
         {
             _filePickerService = filePickerService;
+            _dialogService = dialogService;
 
-            CreateNewProject();
+            CreateNewProject(isInitialLaunch: true);
         }
 
-        public void CreateNewProject()
+        public async Task<bool> CreateNewProject(bool isInitialLaunch = false)
         {
-            // 1. Generate path for temporary file
-            string tempFileName = $"temp_project_{Guid.NewGuid()}.hsp";
-            string tempPath = Path.Combine(Path.GetTempPath(), tempFileName);
+            // 1. Check for unsaved changed
+            if(!isInitialLaunch && CurrentProject.IsDirty)
+            {
+                var result = await _dialogService.ShowConfirmUnsavedChangesDialogAsync();
+                if(result == ConfirmDialogResult.Cancel)
+                {
+                    return false;
+                }
+            }
 
-            // 2. Set project state
-            CurrentProject = new Project { ProjectName = "New Project" };
-            ProjectFilePath = tempPath;
+            // 2. Cleanup old temp folder and make a new one
+            CleanupTemporaryProject();
+            string tempFolderName = $"headspace_tmp_{Guid.NewGuid()}";
+            ProjectFolderPath = Path.Combine(Path.GetTempPath(), tempFolderName);
+            Directory.CreateDirectory(ProjectFolderPath);
             _isTemporaryProject = true;
 
-            // 3. Perform initial save on temp file
-            Task.Run(SaveProjectAsync);
+            // 3. Create new project
+            CurrentProject = new Project { ProjectName = "New Project" };
+
+            return true;
+        }
+
+        public async Task SaveItemAsync(ModelBase item)
+        {
+            if(_isTemporaryProject)
+            {
+                await SaveProjectAsAsync();
+
+                // didnt change location
+                if(_isTemporaryProject)
+                {
+                    return;
+                }
+            }
+
+            var itemPath = Path.Combine(ProjectFolderPath, "data", item.FilePathPrefix, $"{item.Id}.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(itemPath));
+
+            var json = JsonSerializer.Serialize(item as object, item.GetType());
+            await File.WriteAllTextAsync(itemPath, json);
+
+            item.IsDirty = false;
         }
 
         public async Task SaveProjectAsync()
         {
-            if(string.IsNullOrEmpty(ProjectFilePath))
-            {
-                await SaveProjectAsAsync();
-            }
-            else
-            {
-                var json = JsonSerializer.Serialize(CurrentProject);
-                await File.WriteAllTextAsync(ProjectFilePath, json);
-
-                ResetDirtyState();
-            }
-        }
-
-        public async Task SaveProjectAsAsync()
-        {
-            var newPath = await _filePickerService.PickSaveFileAsync();
+            var newPath = await _filePickerService.PickSaveProjectAsync();
             if(string.IsNullOrEmpty(newPath))
             {
                 return;
             }
 
-            if(_isTemporaryProject && !string.IsNullOrEmpty(ProjectFilePath) && File.Exists(ProjectFilePath))
+            var oldPath = ProjectFolderPath;
+            Directory.CreateDirectory(newPath);
+
+            var allItems = CurrentProject.Notes.Cast<ModelBase>()
+                .Concat(CurrentProject.Documents.Cast<ModelBase>())
+                .Concat(CurrentProject.Screenplays.Cast<ModelBase>())
+                .Concat(CurrentProject.Drawings.Cast<ModelBase>())
+                .Concat(CurrentProject.Moodboards.Cast<ModelBase>())
+                .Concat(CurrentProject.Storyboards.Cast<ModelBase>())
+                .Concat(CurrentProject.Musics.Cast<ModelBase>());
+            foreach(var item in allItems)
             {
-                File.Delete(ProjectFilePath);
+                var directoryPath = Path.Combine(newPath, "data", item.FilePathPrefix);
+                Directory.CreateDirectory(directoryPath);
+
+                var itemPath = Path.Combine(directoryPath, $"{item.Id}.json");
+                var json = JsonSerializer.Serialize(item as object, item.GetType());
+
+                await File.WriteAllTextAsync(itemPath, json);
             }
 
-            // Update the temp file to permanent path
-            ProjectFilePath = newPath;
-            CurrentProject.ProjectName = Path.GetFileNameWithoutExtension(newPath);
-            _isTemporaryProject = false;
-
-            await SaveProjectAsync();
-        }
-
-        public void CleanupTemporaryProject()
-        {
-            if(_isTemporaryProject && !string.IsNullOrEmpty(ProjectFilePath) && File.Exists(ProjectFilePath))
+            if(oldPath != null && oldPath.Contains(Path.GetTempPath()))
             {
                 try
                 {
-                    File.Delete(ProjectFilePath);
+                    Directory.Delete(oldPath, true);
                 }
-                catch(Exception ex)
-                {
-
-                }
+                catch { }
             }
+
+            ProjectFolderPath = newPath;
+            CurrentProject.ProjectName = Path.GetFileName(newPath);
+            _isTemporaryProject = false;
+            ResetDirtyState();
         }
 
-        private void ResetDirtyState()
+        public async Task SaveProjectAsAsync()
         {
-            foreach(var item in CurrentProject.Notes)
+            var newPath = await _filePickerService.PickSaveProjectAsync();
+            if(string.IsNullOrEmpty(newPath))
             {
-                item.IsDirty = false;
+                return;
             }
-            foreach(var item in CurrentProject.Documents)
+
+            var oldTempPath = _isTemporaryProject ? ProjectFolderPath : null;
+
+            // 1. update state to new permanent location
+            ProjectFolderPath = newPath;
+            CurrentProject.ProjectName = Path.GetFileName(newPath);
+
+            // 2. create main data directory
+            var dataDirectory = Path.Combine(ProjectFolderPath, "data");
+            Directory.CreateDirectory(dataDirectory);
+
+            // 3. save every single item to new location
+            var allItems = CurrentProject.Notes.Cast<ModelBase>()
+                .Concat(CurrentProject.Documents.Cast<ModelBase>())
+                .Concat(CurrentProject.Screenplays.Cast<ModelBase>())
+                .Concat(CurrentProject.Drawings.Cast<ModelBase>())
+                .Concat(CurrentProject.Moodboards.Cast<ModelBase>())
+                .Concat(CurrentProject.Storyboards.Cast<ModelBase>())
+                .Concat(CurrentProject.Musics.Cast<ModelBase>());
+            foreach(var item in allItems)
             {
-                item.IsDirty = false;
+                var itemDirectory = Path.Combine(dataDirectory, item.FilePathPrefix);
+                Directory.CreateDirectory(itemDirectory);
+
+                var itemPath = Path.Combine(itemDirectory, $"{item.Id}.json");
+                var json = JsonSerializer.Serialize(item as object, item.GetType());
+
+                await File.WriteAllTextAsync(itemPath, json);
             }
-            foreach(var item in CurrentProject.Screenplays)
+
+            // 4. save the main project manifest
+            var projectManifestPath = Path.Combine(ProjectFolderPath, "project.json");
+            var projectJson = JsonSerializer.Serialize(CurrentProject);
+
+            await File.WriteAllTextAsync(projectManifestPath, projectJson);
+
+            // 5. if successful, mark the project as not temp
+            _isTemporaryProject = false;
+            if(!string.IsNullOrEmpty(oldTempPath) && Directory.Exists(oldTempPath))
             {
-                item.IsDirty = false;
+                Directory.Delete(oldTempPath, true);
             }
-            foreach(var item in CurrentProject.Drawings)
-            {
-                item.IsDirty = false;
-            }
-            foreach(var item in CurrentProject.Moodboards)
-            {
-                item.IsDirty = false;
-            }
-            foreach(var item in CurrentProject.Storyboards)
-            {
-                item.IsDirty = false;
-            }
-            foreach(var item in CurrentProject.Musics)
-            {
-                item.IsDirty = false;
-            }
+            ResetDirtyState();
         }
 
         public async Task LoadProjectAsync()
         {
-            var path = await _filePickerService.PickOpenFileAsync();
+            var path = await _filePickerService.PickOpenProjectAsync();
             if(string.IsNullOrEmpty(path) || !File.Exists(path))
             {
                 return;
@@ -138,8 +184,37 @@ namespace headspace.Services.Implementations
             if(loadedProject != null)
             {
                 CurrentProject = loadedProject;
-                ProjectFilePath = path;
-                ResetDirtyState();
+                ProjectFolderPath = path;
+            }
+        }
+
+        public void CleanupTemporaryProject()
+        {
+            if(_isTemporaryProject && !string.IsNullOrEmpty(ProjectFolderPath) && Directory.Exists(ProjectFolderPath))
+            {
+                try
+                {
+                    Directory.Delete(ProjectFolderPath, recursive: true);
+                }
+                catch
+                {
+
+                }
+            }
+        }
+
+        public void ResetDirtyState()
+        {
+            var allItems = CurrentProject.Notes.Cast<ModelBase>()
+                .Concat(CurrentProject.Documents.Cast<ModelBase>())
+                .Concat(CurrentProject.Screenplays.Cast<ModelBase>())
+                .Concat(CurrentProject.Drawings.Cast<ModelBase>())
+                .Concat(CurrentProject.Moodboards.Cast<ModelBase>())
+                .Concat(CurrentProject.Storyboards.Cast<ModelBase>())
+                .Concat(CurrentProject.Musics.Cast<ModelBase>());
+            foreach(var item in allItems)
+            {
+                item.IsDirty = false;
             }
         }
     }

@@ -40,7 +40,16 @@
                          x:Name="ScreenplayEditor"
                          FontFamily="Courier New"
                          FontSize="12"
-                         Background="White" />
+                         Foreground="Black"
+                         Background="White"
+                         PreviewKeyDown="Editor_PreviewKeyDown">
+                <RichEditBox.Resources>
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="White" />
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="White" />
+                    <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="Black" />
+                    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="Black" />
+                </RichEditBox.Resources>
+            </RichEditBox>
         </Grid>
     </Grid>
 </Page>

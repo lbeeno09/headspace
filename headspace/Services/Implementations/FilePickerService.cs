@@ -10,7 +10,7 @@ namespace headspace.Services.Implementations
 {
     public class FilePickerService : IFilePickerService
     {
-        public async Task<string?> PickSaveFileAsync()
+        public async Task<string?> PickSaveProjectAsync()
         {
             var savePicker = new FileSavePicker();
             var window = App.MainWindow;
@@ -24,16 +24,16 @@ namespace headspace.Services.Implementations
             return file?.Path;
         }
 
-        public async Task<string?> PickOpenFileAsync()
+        public async Task<string?> PickOpenProjectAsync()
         {
-            var openPicker = new FileOpenPicker();
+            var openPicker = new FolderPicker();
             var window = App.MainWindow;
             InitializeWithWindow.Initialize(openPicker, WindowNative.GetWindowHandle(window));
 
             openPicker.FileTypeFilter.Add(".hsp");
-            StorageFile file = await openPicker.PickSingleFileAsync();
+            var folder = await openPicker.PickSingleFolderAsync();
 
-            return file?.Path;
+            return folder?.Path;
         }
     }
 }

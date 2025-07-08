@@ -1,17 +1,17 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using headspace.Models.Common;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 
 namespace headspace.ViewModels.Common
 {
-    [ObservableObject]
-    public abstract partial class ViewModelBase<T> where T : class
+    public abstract partial class ViewModelBase<T> : ObservableObject where T : ModelBase
     {
         [ObservableProperty]
         private ObservableCollection<T> _items = new();
         [ObservableProperty]
         private T? _selectedItem;
-
 
 
         [RelayCommand]
@@ -21,8 +21,8 @@ namespace headspace.ViewModels.Common
         [RelayCommand]
         protected abstract void Delete();
         [RelayCommand]
-        protected abstract void Save();
+        protected abstract Task Save();
         [RelayCommand]
-        protected abstract void SaveAll();
+        protected abstract Task SaveAll();
     }
 }

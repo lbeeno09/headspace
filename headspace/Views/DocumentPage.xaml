@@ -67,9 +67,18 @@
             </CommandBar>
 
             <!-- Rich Edit Box -->
-            <RichEditBox  Grid.Row="1" 
-                          x:Name="DocumentEditor"
-                          Background="White" />
+            <RichEditBox Grid.Row="1"
+                         x:Name="DocumentEditor"
+                         Background="White" 
+                         Foreground="Black"
+                         PreviewKeyDown="Editor_PreviewKeyDown">
+                <RichEditBox.Resources>
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="White" />
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="White" />
+                    <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="Black" />
+                    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="Black" />
+                </RichEditBox.Resources>
+            </RichEditBox>
         </Grid>
     </Grid>
 </Page>
