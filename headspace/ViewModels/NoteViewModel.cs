@@ -20,7 +20,10 @@ namespace headspace.ViewModels
             _projectService = projectService;
             _dialogService = dialogService;
 
+            // TODO: When navigating to this page, preserve the selected item to somewhere
             Items = _projectService.CurrentProject.Notes;
+            // TEMPORARY: Will choose the first/default one
+            SelectedItem = Items.FirstOrDefault();
         }
 
         protected override void Add()
