@@ -72,9 +72,34 @@ namespace headspace.Views
 
             string abcString = ViewModel.SelectedItem.Content ?? "";
             string jsonString = JsonSerializer.Serialize(abcString);
-            string script = $"renderAbc({jsonString})";
 
-            await MusicWebView.CoreWebView2.ExecuteScriptAsync(script);
+            // call function to render output
+            string outputScript = $"renderAbc({jsonString})";
+            await MusicWebView.CoreWebView2.ExecuteScriptAsync(outputScript);
+        }
+
+        private async void PlayButton_Click(object sender, RoutedEventArgs e)
+        {
+            if(MusicWebView.CoreWebView2 == null || ViewModel.SelectedItem == null)
+            {
+                return;
+            }
+
+            // 1. get abc text from viewmodel
+            string abcString = ViewModel.SelectedItem.Content ?? "";
+            string jsonString = JsonSerializer.Serialize(abcString);
+
+            // 2. call play function
+            string playScript = $"play({jsonString})";
+            await MusicWebView.CoreWebView2.ExecuteScriptAsync(playScript);
+        }
+
+        private async void StopButton_Click(object sender, RoutedEventArgs e)
+        {
+            if(MusicWebView.CoreWebView2 != null)
+            {
+                await MusicWebView.CoreWebView2.ExecuteScriptAsync("stop();");
+            }
         }
 
         private void Editor_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
