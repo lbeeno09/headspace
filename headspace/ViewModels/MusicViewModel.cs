@@ -1,34 +1,91 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using headspace.Messages;
 using headspace.Models;
+using headspace.Services.Interfaces;
 using headspace.ViewModels.Common;
 using Microsoft.UI.Xaml;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace headspace.ViewModels
 {
-    public partial class MusicViewModel : ObservableObject
+    public class MusicViewModel : ViewModelBase<MusicModel>
     {
-        public ListItemManagerViewModel<MusicItem> MusicListManager { get; }
+        private readonly IProjectService _projectService;
+        private readonly IMessenger _messenger;
+        private readonly IDialogService _dialogService;
 
-        public MusicItem SelectedMusic => MusicListManager.SelectedItem;
+        public XamlRoot? ViewXamlRoot { get; set; }
 
-        public XamlRoot PageXamlRoot
+        public MusicViewModel(IDialogService dialogService, IProjectService projectService, IMessenger messenger)
         {
-            set
+            _dialogService = dialogService;
+            _messenger = messenger;
+            _projectService = projectService;
+
+            Items = _projectService.CurrentProject.Musics;
+        }
+
+        protected override void Add()
+        {
+            string exampleAbc = @"X:1
+T:Example Scale
+M:4/4
+K:C
+C D E F | G A B c";
+
+            var newMusic = new MusicModel { Title = $"New Music {Items.Count + 1}", Content = exampleAbc };
+
+            Items.Add(newMusic);
+            SelectedItem = newMusic;
+        }
+
+        protected override async void Rename()
+        {
+            if(SelectedItem == null || ViewXamlRoot == null)
             {
-                if(value != null)
-                {
-                    MusicListManager.XamlRoot = value;
-                }
+                return;
+            }
+
+            var newName = await _dialogService.ShowRenameDialogAsync(SelectedItem.Title, ViewXamlRoot);
+            if(!string.IsNullOrWhiteSpace(newName))
+            {
+                SelectedItem.Title = newName;
             }
         }
 
-        public MusicViewModel()
+        protected override void Delete()
         {
-            MusicListManager = new ListItemManagerViewModel<MusicItem>((App.Current as App).CurrentProject.Musics);
+            if(SelectedItem == null)
+            {
+                return;
+            }
 
-            MusicListManager.SelectedItem = MusicListManager.Items.FirstOrDefault();
-            MusicListManager.OnItemSelected += (sender, item) => OnPropertyChanged(nameof(SelectedMusic));
+            Items.Remove(SelectedItem);
+            SelectedItem = Items.FirstOrDefault();
+        }
+
+        protected override async Task Save()
+        {
+            if(SelectedItem == null)
+            {
+                await _projectService.SaveItemAsync(SelectedItem);
+            }
+        }
+
+        protected override async Task SaveAll()
+        {
+            foreach(var music in Items.Where(i => i.IsDirty))
+            {
+                await _projectService.SaveItemAsync(music);
+            }
+        }
+
+        protected override Task Export()
+        {
+            _messenger.Send(new ExportMusicAsSvgMessage());
+
+            return Task.CompletedTask;
         }
     }
 }

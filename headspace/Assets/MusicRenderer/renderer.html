@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<title>Music Renderer</title>
+	<!-- TODO: import ABCJS not from CDN -->
+	<script src="abcjs-basic-min.js"></script>
+</head>
+
+<body>
+	<div id="sheet-music"></div>
+
+	<script>
+		let synthController;
+
+		function play(abcString) {
+			synthController = new ABCJS.synth.SynthController();
+
+			if (ABCJS.synth.supportsAudio()) {
+				synthController.load(abcString, { onEnded: stop })
+					.then(() => {
+						console.log("Audio loaded successfully.");
+
+						return synthController.prime();
+					}).then(() => {
+						synthController.play();
+						console.log("Playback started.");
+					}).catch((error) => {
+						console.warn("Audio error:", error);
+					});
+			}
+		}
+
+		function stop() {
+			if (synthController) {
+				synthController.stop();
+			}
+		}
+
+		function renderAbc(abcString) {
+			const outputDiv = document.getElementById("sheet-music");
+			outputDiv.innerHTML = "";
+
+			ABCJS.renderAbc(outputDiv, abcString);
+		}
+
+		function exportSvg() {
+			const svgElement = document.getElementById("sheet-music").querySelector("svg");
+			if (svgElement) {
+				const svgString = svgElement.outerHTML;
+
+				window.chrome.webview.postMessage(svgString);
+			}
+		}
+	</script>
+</body>
+
+</html>

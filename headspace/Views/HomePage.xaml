@@ -7,13 +7,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:headspace.Views"
     mc:Ignorable="d"
-    NavigationCacheMode="Enabled"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid>
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
             <TextBlock Text="Welcome to Headspace!" FontSize="24" FontWeight="SemiBold" />
-            <TextBlock Text="{Binding ProjectTitle}" FontSize="36" FontWeight="Bold" />
+            <TextBlock Text="{x:Bind ViewModel.ProjectName}" FontSize="36" FontWeight="Bold" />
         </StackPanel>
     </Grid>
 </Page>

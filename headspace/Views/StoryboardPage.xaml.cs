@@ -1,222 +1,172 @@
-using headspace.Models;
 using headspace.Models.Common;
 using headspace.ViewModels;
-using headspace.Views.Common;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Graphics.Canvas.Geometry;
+using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Shapes;
-using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
-using System.Text.Json;
+using System.Numerics;
 using Windows.Foundation;
 using Windows.UI;
 
 namespace headspace.Views
 {
-    public sealed partial class StoryboardPage : Page, ISavablePage
+    public sealed partial class StoryboardPage : Page
     {
-        private StoryboardViewModel ViewModel => DataContext as StoryboardViewModel;
-        private Polyline currentStroke;
-        private List<Point> currentPoints;
+        public StoryboardViewModel ViewModel { get; }
 
-        public class SerializableStroke
-        {
-            public List<Point> Points { get; set; } = new List<Point>();
-            public string StrokeColor { get; set; }
-            public double Thickness { get; set; }
-            public bool IsEraser { get; set; }
-        }
+        private readonly List<Point> _currentPoints = new();
+        private bool _isDrawing = false;
+        private Color _activeColor;
 
         public StoryboardPage()
         {
             this.InitializeComponent();
-            this.DataContext = new StoryboardViewModel();
 
-            ViewModel.ClearCanvasCommand.CanExecuteChanged += (sender, e) => ClearCanvasUI();
-            ViewModel.StoryboardListManager.OnItemSelected += StoryboardListManager_OnItemSelected;
-
-            this.Loaded += StoryboardPage_Loaded;
+            ViewModel = ((App)Application.Current).Services.GetRequiredService<StoryboardViewModel>();
+            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         }
 
-        private void StoryboardPage_Loaded(object sender, RoutedEventArgs e)
+        private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            LoadStoryboard(ViewModel.SelectedStoryboard);
+            if(e.PropertyName is nameof(ViewModel.SelectedItem) or nameof(ViewModel.ActivePanel))
+            {
+                StoryboardCanvas.Invalidate();
+            }
         }
 
-        private void StoryboardListManager_OnItemSelected(object sender, ProjectItemBase e)
+        private void StoryboardCanvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
         {
-            LoadStoryboard(e as StoryboardItem);
+            if(ViewModel.SelectedItem == null || ViewModel.ActivePanel == null)
+            {
+                return;
+            }
+
+            int activePanelIndex = ViewModel.SelectedItem.Panels.IndexOf(ViewModel.ActivePanel);
+
+
+            // 1. onion skinning
+            if(activePanelIndex > 0)
+            {
+                var previousPanel = ViewModel.SelectedItem.Panels[activePanelIndex - 1];
+                using(args.DrawingSession.CreateLayer(0.3f))
+                {
+                    foreach(var stroke in previousPanel.Strokes)
+                    {
+                        DrawStroke(sender, args, stroke);
+                    }
+                }
+            }
+
+            // 2. Draw already drawn lines
+            foreach(var stroke in ViewModel.ActivePanel.Strokes)
+            {
+                DrawStroke(sender, args, stroke);
+            }
+
+            // 3. draw live strokes
+            if(_isDrawing && _currentPoints.Count > 1)
+            {
+                var strokeWidth = ViewModel.IsEraserMode ? 20.0f : ViewModel.StrokeThickness;
+                for(int i = 0; i < _currentPoints.Count - 1; i++)
+                {
+                    args.DrawingSession.DrawLine(
+                        (float)_currentPoints[i].X, (float)_currentPoints[i].Y,
+                        (float)_currentPoints[i + 1].X, (float)_currentPoints[i + 1].Y,
+                        _activeColor, strokeWidth
+                        );
+                }
+            }
+        }
+
+        private void DrawStroke(CanvasControl sender, CanvasDrawEventArgs args, StrokeData stroke)
+        {
+            if(stroke.CachedGeometry == null && stroke.Points.Count > 1)
+            {
+                using var pathBuilder = new CanvasPathBuilder(sender);
+                pathBuilder.BeginFigure(stroke.Points[0]);
+                for(int i = 1; i < stroke.Points.Count; i++)
+                {
+                    pathBuilder.AddLine(stroke.Points[i]);
+                }
+                pathBuilder.EndFigure(CanvasFigureLoop.Open);
+
+                stroke.CachedGeometry = CanvasGeometry.CreatePath(pathBuilder);
+            }
+
+            if(stroke.CachedGeometry != null)
+            {
+                args.DrawingSession.DrawGeometry(stroke.CachedGeometry, stroke.Color, stroke.StrokeWidth);
+            }
         }
 
         private void StoryboardCanvas_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
-            if(ViewModel.SelectedStoryboard == null)
+            if(ViewModel.ActivePanel == null)
             {
                 return;
             }
 
-            currentPoints = new List<Point>();
-            currentStroke = new Polyline
+            var properties = e.GetCurrentPoint(StoryboardCanvas).Properties;
+            if(properties.IsLeftButtonPressed)
             {
-                Stroke = ViewModel.IsEraserMode ? StoryboardCanvas.Background : ViewModel.PrimaryColor,
-                StrokeThickness = ViewModel.StrokeThickness,
-                StrokeEndLineCap = PenLineCap.Round,
-                StrokeStartLineCap = PenLineCap.Round,
-                StrokeLineJoin = PenLineJoin.Round
-            };
+                _activeColor = ViewModel.IsEraserMode ? Colors.White : ViewModel.PrimaryColor;
+            }
+            else if(properties.IsRightButtonPressed)
+            {
+                _activeColor = ViewModel.IsEraserMode ? Colors.White : ViewModel.SecondaryColor;
+            }
+            else
+            {
+                return;
+            }
 
-            currentPoints.Add(e.GetCurrentPoint(StoryboardCanvas).Position);
-            StoryboardCanvas.Children.Add(currentStroke);
-
-            e.Handled = true;
+            _isDrawing = true;
+            _currentPoints.Clear();
+            _currentPoints.Add(e.GetCurrentPoint(StoryboardCanvas).Position);
         }
 
         private void StoryboardCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
-            if(!e.Pointer.IsInContact || currentStroke == null || currentPoints == null)
+            if(!_isDrawing)
             {
                 return;
             }
 
-            currentPoints.Add(e.GetCurrentPoint(StoryboardCanvas).Position);
+            _currentPoints.Add(e.GetCurrentPoint(StoryboardCanvas).Position);
 
-            var newPointCollection = new PointCollection();
-            foreach(var point in currentPoints)
-            {
-                newPointCollection.Add(point);
-            }
-            currentStroke.Points = newPointCollection;
-
-            e.Handled = true;
+            StoryboardCanvas.Invalidate();
         }
 
 
         private void StoryboardCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
         {
-            if(currentStroke != null && currentPoints != null)
-            {
-                var newPointCollection = new PointCollection();
-                foreach(var point in currentPoints)
-                {
-                    newPointCollection.Add(point);
-                }
-
-                currentStroke.Points = newPointCollection;
-            }
-
-            currentStroke = null;
-            currentPoints = null;
-            e.Handled = true;
-        }
-
-        private void ClearCanvasUI()
-        {
-            StoryboardCanvas.Children.Clear();
-        }
-
-        public void SavePageContentToModel()
-        {
-            if(ViewModel.SelectedStoryboard == null)
+            if(!_isDrawing || _currentPoints.Count < 2 || ViewModel.ActivePanel == null)
             {
                 return;
             }
 
-            var serializableStrokes = new List<SerializableStroke>();
-            foreach(UIElement child in StoryboardCanvas.Children)
+            _isDrawing = false;
+
+
+            var pointsToSave = _currentPoints.Select(p => new Vector2((float)p.X, (float)p.Y)).ToList();
+            var stroke = new StrokeData
             {
-                if(child is Polyline polyline)
-                {
-                    string colorHex = (polyline.Stroke as SolidColorBrush)?.Color.ToString() ?? Colors.Black.ToString();
+                Points = pointsToSave,
+                Color = _activeColor,
+                StrokeWidth = ViewModel.IsEraserMode ? 20.0f : ViewModel.StrokeThickness
+            };
 
-                    serializableStrokes.Add(new SerializableStroke
-                    {
-                        Points = polyline.Points.ToList(),
-                        StrokeColor = colorHex,
-                        Thickness = polyline.StrokeThickness,
-                        IsEraser = (polyline.Stroke as SolidColorBrush)?.Color == ((SolidColorBrush)StoryboardCanvas.Background)?.Color
-                    });
-                }
-            }
+            ViewModel.ActivePanel.Strokes.Add(stroke);
 
-            ViewModel.SelectedStoryboard.Content = JsonSerializer.Serialize(serializableStrokes);
-            ViewModel.SelectedStoryboard.LastModified = DateTime.Now;
-            System.Diagnostics.Debug.WriteLine($"Drawing data serialized for: {ViewModel.SelectedStoryboard.ToString}. Size: {ViewModel.SelectedStoryboard.Content.Length} chars");
-        }
+            _currentPoints.Clear();
 
-        private void LoadStoryboard(StoryboardItem storyboardItem)
-        {
-            ClearCanvasUI();
-
-            if(storyboardItem == null || string.IsNullOrEmpty(storyboardItem.Content))
-            {
-                return;
-            }
-
-            try
-            {
-                var loadedStrokes = JsonSerializer.Deserialize<List<SerializableStroke>>(storyboardItem.Content);
-                if(loadedStrokes != null)
-                {
-                    foreach(var sStroke in loadedStrokes)
-                    {
-                        if(sStroke.Points == null || sStroke.Points.Count == 0)
-                        {
-                            continue;
-                        }
-
-                        var polyline = new Polyline
-                        {
-                            Stroke = new SolidColorBrush(ParseColor(sStroke.StrokeColor)),
-                            StrokeThickness = sStroke.Thickness,
-                            StrokeEndLineCap = PenLineCap.Round,
-                            StrokeStartLineCap = PenLineCap.Round,
-                            StrokeLineJoin = PenLineJoin.Round
-                        };
-                        polyline.Points = new PointCollection();
-                        foreach(Point point in sStroke.Points)
-                        {
-                            polyline.Points.Add(point);
-                        }
-                        StoryboardCanvas.Children.Add(polyline);
-                    }
-                    System.Diagnostics.Debug.WriteLine($"Loaded {loadedStrokes.Count} strokes for: {storyboardItem.Title}");
-                }
-            }
-            catch(JsonException ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error deserializing drawing data for {storyboardItem.Title}: {ex.Message}");
-
-            }
-            catch(Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Unexpected error loading drawing data for {storyboardItem.Title}: {ex.Message}");
-            }
-        }
-
-        private Color ParseColor(string hexColor)
-        {
-            if(string.IsNullOrEmpty(hexColor) || hexColor.Length != 9 || !hexColor.StartsWith("#"))
-            {
-                return Colors.Black;
-            }
-
-            try
-            {
-                byte a = byte.Parse(hexColor.Substring(1, 2), System.Globalization.NumberStyles.HexNumber);
-                byte r = byte.Parse(hexColor.Substring(3, 2), System.Globalization.NumberStyles.HexNumber);
-                byte g = byte.Parse(hexColor.Substring(5, 2), System.Globalization.NumberStyles.HexNumber);
-                byte b = byte.Parse(hexColor.Substring(7, 2), System.Globalization.NumberStyles.HexNumber);
-
-                return Color.FromArgb(a, r, g, b);
-            }
-            catch
-            {
-                return Colors.Red;
-            }
+            StoryboardCanvas.Invalidate();
         }
     }
 }

@@ -1,68 +1,105 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using headspace.Models;
+using headspace.Services.Interfaces;
 using headspace.ViewModels.Common;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media;
 using System.Linq;
-using System.Windows.Input;
+using System.Threading.Tasks;
+using Windows.UI;
 
 namespace headspace.ViewModels
 {
-    public partial class MoodboardViewModel : ObservableObject
+    public partial class MoodboardViewModel : ViewModelBase<MoodboardModel>
     {
-        public ListItemManagerViewModel<MoodboardItem> MoodboardListManager { get; }
+        private readonly IProjectService _projectService;
+        private readonly IFilePickerService _filePickerService;
+        private readonly ICanvasExportService _canvasExportService;
+        private readonly IDialogService _dialogService;
 
-        public MoodboardItem SelectedMoodboard => MoodboardListManager.SelectedItem;
+        public XamlRoot? ViewXamlRoot { get; set; }
 
         [ObservableProperty]
-        private SolidColorBrush primaryColor = new SolidColorBrush(Colors.Black);
-        [ObservableProperty]
-        private SolidColorBrush secondaryColor = new SolidColorBrush(Colors.White);
-        [ObservableProperty]
-        private double strokeThickness = 2.0;
-        [ObservableProperty]
-        private bool isEraserMode;
+        private Color _primaryColor = Colors.Black;
 
-        public ICommand ClearCanvasCommand { get; }
+        [ObservableProperty]
+        private Color _secondaryColor = Colors.White;
 
-        public XamlRoot PageXamlRoot
+        [ObservableProperty]
+        private float _strokeThickness = 2.0f;
+
+        [ObservableProperty]
+        private bool _isEraserMode = false;
+
+
+        public MoodboardViewModel(IDialogService dialogService, IProjectService projectService, IFilePickerService filePickerService, ICanvasExportService canvasExportService)
         {
-            set
+            _dialogService = dialogService;
+            _filePickerService = filePickerService;
+            _canvasExportService = canvasExportService;
+            _projectService = projectService;
+
+            Items = _projectService.CurrentProject.Moodboards;
+        }
+
+        protected override void Add()
+        {
+            var newMoodboard = new MoodboardModel { Title = $"New Moodboard {Items.Count + 1}" };
+
+            Items.Add(newMoodboard);
+            SelectedItem = newMoodboard;
+        }
+
+        protected override async void Rename()
+        {
+            if(SelectedItem == null || ViewXamlRoot == null)
             {
-                if(value != null)
-                {
-                    MoodboardListManager.XamlRoot = value;
-                }
+                return;
+            }
+
+            var newName = await _dialogService.ShowRenameDialogAsync(SelectedItem.Title, ViewXamlRoot);
+            if(!string.IsNullOrWhiteSpace(newName))
+            {
+                SelectedItem.Title = newName;
             }
         }
 
-        public MoodboardViewModel()
+        protected override void Delete()
         {
-            MoodboardListManager = new ListItemManagerViewModel<MoodboardItem>((App.Current as App).CurrentProject.Moodboards);
+            if(SelectedItem == null)
+            {
+                return;
+            }
 
-            MoodboardListManager.SelectedItem = MoodboardListManager.Items.FirstOrDefault();
-            MoodboardListManager.OnItemSelected += (sender, item) => OnPropertyChanged(nameof(SelectedMoodboard));
-
-            ClearCanvasCommand = new RelayCommand(ClearCanvas);
-
+            Items.Remove(SelectedItem);
+            SelectedItem = Items.FirstOrDefault();
         }
 
-        private void ClearCanvas()
+        protected override async Task Save()
         {
-            if(SelectedMoodboard != null)
+            if(SelectedItem == null)
             {
-                SelectedMoodboard.Content = "";
-
-                System.Diagnostics.Debug.WriteLine($"Cleared drawing for: {SelectedMoodboard.Title}");
+                await _projectService.SaveItemAsync(SelectedItem);
             }
         }
 
-        [RelayCommand]
-        private void ToggleErase()
+        protected override async Task SaveAll()
         {
-            IsEraserMode = !IsEraserMode;
+            foreach(var moodboard in Items.Where(i => i.IsDirty))
+            {
+                await _projectService.SaveItemAsync(moodboard);
+            }
+        }
+
+        protected override async Task Export()
+        {
+            var path = await _filePickerService.PickSaveFileAsync_Png(SelectedItem.Title);
+            if(string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            await _canvasExportService.ExportAsPngAsync(SelectedItem, path);
         }
     }
 }

@@ -6,15 +6,13 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
-    xmlns:local="using:headspace.Views"
-    xmlns:commonViews="using:headspace.Views.Common"
-    xmlns:vm="using:headspace.ViewModels"
+    xmlns:conv="using:headspace.Converters"
+    xmlns:vCommon="using:headspace.Views.Common"
     mc:Ignorable="d"
-    NavigationCacheMode="Enabled"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Page.Resources>
-        <local:NullToBooleanConverter x:Key="NullToBooleanConverter" />
+        <conv:NullToBooleanConverter x:Key="NullToBooleanConverter" />
     </Page.Resources>
 
     <Grid>
@@ -25,26 +23,33 @@
         </Grid.ColumnDefinitions>
 
         <!-- Music List -->
-        <Border Grid.Column="0" MinWidth="100">
-            <commonViews:ListItemManager DataContext="{Binding NoteListManager}" />
-        </Border>
+        <vCommon:ItemListView Grid.Column="0" DataContext="{x:Bind ViewModel}" />
 
         <!-- Music Editor -->
-        <TextBox Text="{Binding SelectedMusic.Content, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-            Grid.Column="1"
-            AcceptsReturn="True" TextWrapping="Wrap"
-            VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
-            IsEnabled="{Binding SelectedMusic, Converter={StaticResource NullToBooleanConverter}}" />
+        <TextBox Grid.Column="1"
+                 Text="{x:Bind ViewModel.SelectedItem.Content, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 PlaceholderText="Select a sheet and start typing abc notation..."
+                 VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                 PreviewKeyDown="Editor_PreviewKeyDown"
+                 IsEnabled="{Binding ViewModel.SelectedItem, Converter={StaticResource NullToBooleanConverter}}" />
 
         <!-- Music Preview -->
         <Grid Grid.Column="2">
-            <ScrollViewer HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalScrollMode="Disabled" VerticalScrollMode="Auto">
-                <WebView2 
-                    x:Name="MusicWebView"
-                    Source="ms-appx-web:///Assets/verovio/index.html"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Stretch" />
-            </ScrollViewer>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <CommandBar Grid.Row="0" DefaultLabelPosition="Right">
+                <AppBarButton Icon="Play" Click="PlayButton_Click" />
+                <AppBarButton Icon="Stop" Click="StopButton_Click" />
+            </CommandBar>
+            
+            <WebView2  Grid.Row="1"
+                       x:Name="MusicWebView"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Stretch" />
         </Grid>
     </Grid>
 </Page>

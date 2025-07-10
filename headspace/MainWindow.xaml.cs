@@ -9,6 +9,9 @@ namespace headspace
         {
             this.InitializeComponent();
 
+            ExtendsContentIntoTitleBar = true;
+            SetTitleBar(null);
+
             RootFrame.Navigate(typeof(MainViewPage));
         }
     }
