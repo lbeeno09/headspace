@@ -3,6 +3,7 @@ using headspace.Services.Interfaces;
 using headspace.ViewModels.Common;
 using Microsoft.UI.Xaml;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -11,13 +12,15 @@ namespace headspace.ViewModels
     public partial class NoteViewModel : ViewModelBase<NoteModel>
     {
         private readonly IProjectService _projectService;
+        private readonly IFilePickerService _filePickerService;
         private readonly IDialogService _dialogService;
 
         public XamlRoot? ViewXamlRoot { get; set; }
 
-        public NoteViewModel(IProjectService projectService, IDialogService dialogService)
+        public NoteViewModel(IProjectService projectService, IDialogService dialogService, IFilePickerService filePickerService)
         {
             _projectService = projectService;
+            _filePickerService = filePickerService;
             _dialogService = dialogService;
 
             // TODO: When navigating to this page, preserve the selected item to somewhere
@@ -77,6 +80,17 @@ namespace headspace.ViewModels
             {
                 await _projectService.SaveItemAsync(note);
             }
+        }
+
+        protected override async Task Export()
+        {
+            var path = await _filePickerService.PickSaveFileAsync_Markdown(SelectedItem.Title);
+            if(string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            await File.WriteAllTextAsync(path, SelectedItem.Content);
         }
     }
 }

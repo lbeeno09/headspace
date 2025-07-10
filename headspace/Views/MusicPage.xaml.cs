@@ -1,4 +1,7 @@
+using CommunityToolkit.Mvvm.Messaging;
+using headspace.Messages;
 using headspace.Models;
+using headspace.Services.Interfaces;
 using headspace.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -15,6 +18,8 @@ namespace headspace.Views
 {
     public sealed partial class MusicPage : Page
     {
+        private readonly IFilePickerService _filePickerService;
+
         public MusicViewModel ViewModel { get; }
         private bool _isWebViewReady = false;
 
@@ -28,8 +33,21 @@ namespace headspace.Views
                 ViewModel.ViewXamlRoot = this.XamlRoot;
             };
 
+            _filePickerService = ((App)Application.Current).Services.GetRequiredService<IFilePickerService>();
+
+            MusicWebView.CoreWebView2Initialized += (s, e) =>
+            {
+                s.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+            };
+
             string htmlPath = Path.Combine(AppContext.BaseDirectory, "Assets", "MusicRenderer", "renderer.html");
             MusicWebView.Source = new Uri(htmlPath);
+
+            ((App)Application.Current).Services.GetRequiredService<IMessenger>()
+                .Register<ExportMusicAsSvgMessage>(this, (recipient, message) =>
+                {
+                    TriggerExport();
+                });
 
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;
             MusicWebView.NavigationCompleted += MusicWebView_NavigationCompleted;
@@ -114,6 +132,27 @@ namespace headspace.Views
 
                 e.Handled = true;
             }
+        }
+
+        private async void TriggerExport()
+        {
+            if(MusicWebView.CoreWebView2 != null)
+            {
+                await MusicWebView.CoreWebView2.ExecuteScriptAsync("exportSvg();");
+            }
+        }
+
+        private async void CoreWebView2_WebMessageReceived(CoreWebView2 sender, CoreWebView2WebMessageReceivedEventArgs args)
+        {
+            string svgContent = args.TryGetWebMessageAsString();
+
+            var path = await _filePickerService.PickSaveFileAsync_Svg(ViewModel.SelectedItem.Title);
+            if(string.IsNullOrWhiteSpace(path))
+            {
+                return;
+            }
+
+            await File.WriteAllTextAsync(path, svgContent);
         }
     }
 }

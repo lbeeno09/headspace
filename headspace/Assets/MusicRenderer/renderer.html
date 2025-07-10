@@ -44,6 +44,15 @@
 
 			ABCJS.renderAbc(outputDiv, abcString);
 		}
+
+		function exportSvg() {
+			const svgElement = document.getElementById("sheet-music").querySelector("svg");
+			if (svgElement) {
+				const svgString = svgElement.outerHTML;
+
+				window.chrome.webview.postMessage(svgString);
+			}
+		}
 	</script>
 </body>
 

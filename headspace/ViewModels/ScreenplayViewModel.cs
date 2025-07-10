@@ -2,6 +2,7 @@
 using headspace.Services.Interfaces;
 using headspace.ViewModels.Common;
 using Microsoft.UI.Xaml;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -10,13 +11,15 @@ namespace headspace.ViewModels
     public class ScreenplayViewModel : ViewModelBase<ScreenplayModel>
     {
         private readonly IProjectService _projectService;
+        private readonly IFilePickerService _filePickerService;
         private readonly IDialogService _dialogService;
 
         public XamlRoot? ViewXamlRoot { get; set; }
 
-        public ScreenplayViewModel(IDialogService dialogService, IProjectService projectService)
+        public ScreenplayViewModel(IDialogService dialogService, IProjectService projectService, IFilePickerService filePickerService)
         {
             _projectService = projectService;
+            _filePickerService = filePickerService;
             _dialogService = dialogService;
 
             Items = _projectService.CurrentProject.Screenplays;
@@ -69,6 +72,17 @@ namespace headspace.ViewModels
             {
                 await _projectService.SaveItemAsync(screenplay);
             }
+        }
+
+        protected override async Task Export()
+        {
+            var path = await _filePickerService.PickSaveFileAsync_Rtf(SelectedItem.Title);
+            if(string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            await File.WriteAllTextAsync(path, SelectedItem.Content);
         }
     }
 }

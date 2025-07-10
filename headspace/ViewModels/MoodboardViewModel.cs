@@ -13,6 +13,8 @@ namespace headspace.ViewModels
     public partial class MoodboardViewModel : ViewModelBase<MoodboardModel>
     {
         private readonly IProjectService _projectService;
+        private readonly IFilePickerService _filePickerService;
+        private readonly ICanvasExportService _canvasExportService;
         private readonly IDialogService _dialogService;
 
         public XamlRoot? ViewXamlRoot { get; set; }
@@ -30,9 +32,11 @@ namespace headspace.ViewModels
         private bool _isEraserMode = false;
 
 
-        public MoodboardViewModel(IDialogService dialogService, IProjectService projectService)
+        public MoodboardViewModel(IDialogService dialogService, IProjectService projectService, IFilePickerService filePickerService, ICanvasExportService canvasExportService)
         {
             _dialogService = dialogService;
+            _filePickerService = filePickerService;
+            _canvasExportService = canvasExportService;
             _projectService = projectService;
 
             Items = _projectService.CurrentProject.Moodboards;
@@ -85,6 +89,17 @@ namespace headspace.ViewModels
             {
                 await _projectService.SaveItemAsync(moodboard);
             }
+        }
+
+        protected override async Task Export()
+        {
+            var path = await _filePickerService.PickSaveFileAsync_Png(SelectedItem.Title);
+            if(string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            await _canvasExportService.ExportAsPngAsync(SelectedItem, path);
         }
     }
 }

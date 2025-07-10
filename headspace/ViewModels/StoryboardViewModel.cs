@@ -15,6 +15,8 @@ namespace headspace.ViewModels
     public partial class StoryboardViewModel : ViewModelBase<StoryboardModel>
     {
         private readonly IProjectService _projectService;
+        private readonly IFilePickerService _filePickerService;
+        private readonly ICanvasExportService _canvasExportService;
         private readonly IDialogService _dialogService;
 
         public XamlRoot? ViewXamlRoot { get; set; }
@@ -34,9 +36,11 @@ namespace headspace.ViewModels
         [ObservableProperty]
         private PanelModel? _activePanel;
 
-        public StoryboardViewModel(IDialogService dialogService, IProjectService projectService)
+        public StoryboardViewModel(IDialogService dialogService, IProjectService projectService, IFilePickerService filePickerService, ICanvasExportService canvasExportService)
         {
             _dialogService = dialogService;
+            _filePickerService = filePickerService;
+            _canvasExportService = canvasExportService;
             _projectService = projectService;
 
             Items = _projectService.CurrentProject.Storyboards;
@@ -119,6 +123,23 @@ namespace headspace.ViewModels
             {
                 await _projectService.SaveItemAsync(storyboard);
             }
+        }
+
+        protected override async Task Export()
+        {
+            if(SelectedItem == null)
+            {
+                return;
+            }
+
+            var path = await _filePickerService.PickSaveFileAsync_Pdf(SelectedItem.Title);
+            if(string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+
+            await _canvasExportService.ExportAsPdfAsync(SelectedItem, path);
         }
     }
 }

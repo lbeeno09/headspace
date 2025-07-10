@@ -1,4 +1,5 @@
-﻿using headspace.Services.Implementations;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using headspace.Services.Implementations;
 using headspace.Services.Interfaces;
 using headspace.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +49,8 @@ namespace headspace
             services.AddSingleton<IFilePickerService, FilePickerService>();
             services.AddSingleton<IProjectService, ProjectService>();
             services.AddSingleton<ISettingsService, SettingService>();
+            services.AddSingleton<ICanvasExportService, CanvasExportService>();
+            services.AddSingleton<IMessenger>(WeakReferenceMessenger.Default);
 
             // ViewModels
             services.AddSingleton<MainViewModel>();
@@ -61,6 +64,7 @@ namespace headspace
             services.AddSingleton<StoryboardViewModel>();
             services.AddSingleton<MusicViewModel>();
             services.AddSingleton<PreferenceViewModel>();
+
 
             return services.BuildServiceProvider();
         }

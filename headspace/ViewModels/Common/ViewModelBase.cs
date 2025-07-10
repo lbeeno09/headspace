@@ -10,6 +10,7 @@ namespace headspace.ViewModels.Common
     {
         [ObservableProperty]
         private ObservableCollection<T> _items = new();
+
         [ObservableProperty]
         private T? _selectedItem;
 
@@ -22,7 +23,11 @@ namespace headspace.ViewModels.Common
         protected abstract void Delete();
         [RelayCommand]
         protected abstract Task Save();
+
         [RelayCommand]
         protected abstract Task SaveAll();
+
+        [RelayCommand]
+        protected abstract Task Export();
     }
 }

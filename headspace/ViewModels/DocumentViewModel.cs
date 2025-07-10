@@ -2,6 +2,7 @@
 using headspace.Services.Interfaces;
 using headspace.ViewModels.Common;
 using Microsoft.UI.Xaml;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -10,13 +11,15 @@ namespace headspace.ViewModels
     public partial class DocumentViewModel : ViewModelBase<DocumentModel>
     {
         private readonly IDialogService _dialogService;
+        private readonly IFilePickerService _filePickerService;
         private readonly IProjectService _projectService;
 
         public XamlRoot? ViewXamlRoot { get; set; }
 
-        public DocumentViewModel(IDialogService dialogService, IProjectService projectService)
+        public DocumentViewModel(IDialogService dialogService, IProjectService projectService, IFilePickerService filePickerService)
         {
             _dialogService = dialogService;
+            _filePickerService = filePickerService;
             _projectService = projectService;
 
             Items = _projectService.CurrentProject.Documents;
@@ -69,6 +72,17 @@ namespace headspace.ViewModels
             {
                 await _projectService.SaveItemAsync(document);
             }
+        }
+
+        protected override async Task Export()
+        {
+            var path = await _filePickerService.PickSaveFileAsync_Rtf(SelectedItem.Title);
+            if(string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            await File.WriteAllTextAsync(path, SelectedItem.Content);
         }
     }
 }

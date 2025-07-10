@@ -15,6 +15,8 @@ namespace headspace.ViewModels
     public partial class DrawingViewModel : ViewModelBase<DrawingModel>
     {
         private readonly IProjectService _projectService;
+        private readonly IFilePickerService _filePickerService;
+        private readonly ICanvasExportService _canvasExportService;
         private readonly IDialogService _dialogService;
 
         public XamlRoot? ViewXamlRoot { get; set; }
@@ -34,9 +36,11 @@ namespace headspace.ViewModels
         [ObservableProperty]
         private LayerModel? _activeLayer;
 
-        public DrawingViewModel(IDialogService dialogService, IProjectService projectService)
+        public DrawingViewModel(IDialogService dialogService, IProjectService projectService, IFilePickerService filePickerService, ICanvasExportService canvasExportService)
         {
             _dialogService = dialogService;
+            _filePickerService = filePickerService;
+            _canvasExportService = canvasExportService;
             _projectService = projectService;
 
             Items = _projectService.CurrentProject.Drawings;
@@ -148,6 +152,17 @@ namespace headspace.ViewModels
             {
                 await _projectService.SaveItemAsync(drawing);
             }
+        }
+
+        protected override async Task Export()
+        {
+            var path = await _filePickerService.PickSaveFileAsync_Png(SelectedItem.Title);
+            if(string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            await _canvasExportService.ExportAsPngAsync(SelectedItem, path);
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using headspace.Models;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using headspace.Messages;
+using headspace.Models;
 using headspace.Services.Interfaces;
 using headspace.ViewModels.Common;
 using Microsoft.UI.Xaml;
@@ -10,13 +12,15 @@ namespace headspace.ViewModels
     public class MusicViewModel : ViewModelBase<MusicModel>
     {
         private readonly IProjectService _projectService;
+        private readonly IMessenger _messenger;
         private readonly IDialogService _dialogService;
 
         public XamlRoot? ViewXamlRoot { get; set; }
 
-        public MusicViewModel(IDialogService dialogService, IProjectService projectService)
+        public MusicViewModel(IDialogService dialogService, IProjectService projectService, IMessenger messenger)
         {
             _dialogService = dialogService;
+            _messenger = messenger;
             _projectService = projectService;
 
             Items = _projectService.CurrentProject.Musics;
@@ -75,6 +79,13 @@ C D E F | G A B c";
             {
                 await _projectService.SaveItemAsync(music);
             }
+        }
+
+        protected override Task Export()
+        {
+            _messenger.Send(new ExportMusicAsSvgMessage());
+
+            return Task.CompletedTask;
         }
     }
 }
