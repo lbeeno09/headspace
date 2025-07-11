@@ -42,7 +42,12 @@
 			const outputDiv = document.getElementById("sheet-music");
 			outputDiv.innerHTML = "";
 
-			ABCJS.renderAbc(outputDiv, abcString);
+			const renderOptions = {
+				add_classes: true,
+				responsive: "resize"
+			};
+
+			ABCJS.renderAbc(outputDiv, abcString, renderOptions);
 		}
 
 		function exportSvg() {

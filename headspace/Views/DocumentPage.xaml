@@ -33,37 +33,61 @@
             
             <!-- Tool bar -->
             <CommandBar Grid.Row="0" DefaultLabelPosition="Right" Background="Transparent">
-                <AppBarButton Icon="Bold" Label="Bold" Click="BoldButton_Click">
-                    <AppBarButton.KeyboardAccelerators>
-                        <KeyboardAccelerator Modifiers="Control" Key="B" />
-                    </AppBarButton.KeyboardAccelerators>
-                </AppBarButton>
-                <AppBarButton Icon="Italic" Label="Italic" Click="ItalicButton_Click">
-                    <AppBarButton.KeyboardAccelerators>
-                        <KeyboardAccelerator Modifiers="Control" Key="I" />
-                    </AppBarButton.KeyboardAccelerators>
-                </AppBarButton>
-                <AppBarButton Icon="Underline" Label="Underline" Click="UnderlineButton_Click">
-                    <AppBarButton.KeyboardAccelerators>
-                        <KeyboardAccelerator Modifiers="Control" Key="U" />
-                    </AppBarButton.KeyboardAccelerators>
-                </AppBarButton>
+                <AppBarElementContainer>
+                    <ComboBox x:Name="FontComboBox" Width="150" SelectionChanged="FontComboBox_SelectionChanged">
+                        <ComboBoxItem>Arial</ComboBoxItem>
+                        <ComboBoxItem>Calibri</ComboBoxItem>
+                        <ComboBoxItem>Times New Roman</ComboBoxItem>
+                        <ComboBoxItem>Consolas</ComboBoxItem>
+                    </ComboBox>
+                </AppBarElementContainer>
                 <AppBarSeparator />
-                <AppBarButton Icon="AlignLeft" Label="Align Left" Click="AlignLeftButton_Click">
-                    <AppBarButton.KeyboardAccelerators>
+                <AppBarToggleButton x:Name="BoldButton"
+                                    Icon="Bold"
+                                    Click="BoldButton_Click">
+                    <AppBarToggleButton.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="B" />
+                    </AppBarToggleButton.KeyboardAccelerators>
+                </AppBarToggleButton>
+                <AppBarToggleButton x:Name="ItalicButton"
+                                    Icon="Italic"
+                                    Click="ItalicButton_Click">
+                    <AppBarToggleButton.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="I" />
+                    </AppBarToggleButton.KeyboardAccelerators>
+                </AppBarToggleButton>
+                <AppBarToggleButton x:Name="UnderlineButton"
+                                    Icon="Underline"
+                                    Click="UnderlineButton_Click">
+                    <AppBarToggleButton.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="U" />
+                    </AppBarToggleButton.KeyboardAccelerators>
+                </AppBarToggleButton>
+                <AppBarSeparator />
+                <AppBarToggleButton x:Name="AlignLeftButton"
+                                    Icon="AlignLeft"
+                                    Click="AlignLeftButton_Click"
+                                    IsChecked="{x:Bind ViewModel.IsAlignmentLeft, Mode=OneWay}">
+                    <AppBarToggleButton.KeyboardAccelerators>
                         <KeyboardAccelerator Modifiers="Control" Key="L" />
-                    </AppBarButton.KeyboardAccelerators>
-                </AppBarButton>
-                <AppBarButton Icon="AlignCenter" Label="Align Center" Click="AlignCenterButton_Click">
-                    <AppBarButton.KeyboardAccelerators>
+                    </AppBarToggleButton.KeyboardAccelerators>
+                </AppBarToggleButton>
+                <AppBarToggleButton x:Name="AlignCenterButton"
+                                    Icon="AlignCenter"
+                                    Click="AlignCenterButton_Click"
+                                    IsChecked="{x:Bind ViewModel.IsAlignmentCenter, Mode=OneWay}">
+                    <AppBarToggleButton.KeyboardAccelerators>
                         <KeyboardAccelerator Modifiers="Control" Key="E" />
-                    </AppBarButton.KeyboardAccelerators>
-                </AppBarButton>
-                <AppBarButton Icon="AlignRight" Label="Align Right" Click="AlignRightButton_Click">
-                    <AppBarButton.KeyboardAccelerators>
+                    </AppBarToggleButton.KeyboardAccelerators>
+                </AppBarToggleButton>
+                <AppBarToggleButton x:Name="AlignRightButton"
+                                    Icon="AlignRight"
+                                    Click="AlignRightButton_Click"
+                                    IsChecked="{x:Bind ViewModel.IsAlignmentRight, Mode=OneWay}">
+                    <AppBarToggleButton.KeyboardAccelerators>
                         <KeyboardAccelerator Modifiers="Control" Key="R" />
-                    </AppBarButton.KeyboardAccelerators>
-                </AppBarButton>
+                    </AppBarToggleButton.KeyboardAccelerators>
+                </AppBarToggleButton>
             </CommandBar>
 
             <!-- Rich Edit Box -->
@@ -81,7 +105,9 @@
                             <RichEditBox x:Name="DocumentEditor"
                                          Background="Transparent" 
                                          Foreground="Black"
+                                         FontFamily="Times New Roman"
                                          PreviewKeyDown="Editor_PreviewKeyDown"
+                                         SelectionChanged="DocumentEditor_SelectionChanged"
                                          ScrollViewer.VerticalScrollBarVisibility="Visible"
                                          Padding="48,24,48,24">
                                 <RichEditBox.Resources>

@@ -1,3 +1,5 @@
+// TODO: Fix Alignment Toggle Button Reflect Immediately
+
 using headspace.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Text;
@@ -5,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System.ComponentModel;
+using System.Linq;
 using Windows.System;
 
 namespace headspace.Views
@@ -72,7 +75,32 @@ namespace headspace.Views
             }
         }
 
+        private void DocumentEditor_SelectionChanged(object sender, RoutedEventArgs e)
+        {
+            var charFormat = DocumentEditor.Document.Selection.CharacterFormat;
+            BoldButton.IsChecked = charFormat.Bold == FormatEffect.On;
+            ItalicButton.IsChecked = charFormat.Italic == FormatEffect.On;
+            UnderlineButton.IsChecked = charFormat.Underline == UnderlineType.Single;
+
+            ViewModel.SelectedAlignment = DocumentEditor.Document.Selection.ParagraphFormat.Alignment;
+
+            var fontName = charFormat.Name;
+            var fontItem = FontComboBox.Items.Cast<ComboBoxItem>().FirstOrDefault(item => item.Content.ToString() == fontName);
+            if(fontItem != null)
+            {
+                FontComboBox.SelectedItem = fontItem;
+            }
+        }
+
         // --- Formatting Buttons ---
+        private void FontComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if(FontComboBox.SelectedItem is ComboBoxItem selectedFont)
+            {
+                DocumentEditor.Document.Selection.CharacterFormat.Name = selectedFont.Content.ToString();
+            }
+        }
+
         private void BoldButton_Click(object sender, RoutedEventArgs e)
         {
             DocumentEditor.Document.Selection.CharacterFormat.Bold = FormatEffect.Toggle;
@@ -97,6 +125,7 @@ namespace headspace.Views
         {
             DocumentEditor.Document.Selection.ParagraphFormat.Alignment = ParagraphAlignment.Center;
         }
+
         private void AlignRightButton_Click(object sender, RoutedEventArgs e)
         {
             DocumentEditor.Document.Selection.ParagraphFormat.Alignment = ParagraphAlignment.Right;

@@ -1,6 +1,8 @@
-﻿using headspace.Models;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using headspace.Models;
 using headspace.Services.Interfaces;
 using headspace.ViewModels.Common;
+using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using System.IO;
 using System.Linq;
@@ -13,6 +15,16 @@ namespace headspace.ViewModels
         private readonly IDialogService _dialogService;
         private readonly IFilePickerService _filePickerService;
         private readonly IProjectService _projectService;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsAlignmentLeft))]
+        [NotifyPropertyChangedFor(nameof(IsAlignmentCenter))]
+        [NotifyPropertyChangedFor(nameof(IsAlignmentRight))]
+        private ParagraphAlignment _selectedAlignment;
+
+        public bool IsAlignmentLeft => _selectedAlignment == ParagraphAlignment.Left;
+        public bool IsAlignmentCenter => _selectedAlignment == ParagraphAlignment.Center;
+        public bool IsAlignmentRight => _selectedAlignment == ParagraphAlignment.Right;
 
         public XamlRoot? ViewXamlRoot { get; set; }
 
