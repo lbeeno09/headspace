@@ -7,6 +7,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:commonModels="using:headspace.Models.Common"
     xmlns:local="using:headspace.Views"
+    KeyDown="MainViewPage_KeyDown"
+    IsTabStop="True"
     mc:Ignorable="d">
 
     <Grid>
