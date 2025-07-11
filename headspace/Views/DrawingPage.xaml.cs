@@ -146,22 +146,18 @@ namespace headspace.Views
             }
 
             var properties = e.GetCurrentPoint(DrawingCanvas).Properties;
-            if(properties.IsLeftButtonPressed)
-            {
-                _activeColor = ViewModel.IsEraserMode ? Colors.White : ViewModel.PrimaryColor;
-            }
-            else if(properties.IsRightButtonPressed)
-            {
-                _activeColor = ViewModel.IsEraserMode ? Colors.White : ViewModel.SecondaryColor;
-            }
-            else
+            if(!properties.IsLeftButtonPressed && !properties.IsRightButtonPressed)
             {
                 return;
             }
 
             _isDrawing = true;
+            _activeColor = properties.IsLeftButtonPressed ? ViewModel.PrimaryColor : ViewModel.SecondaryColor;
+
             _currentPoints.Clear();
             _currentPoints.Add(e.GetCurrentPoint(DrawingCanvas).Position);
+
+            (sender as UIElement).CapturePointer(e.Pointer);
         }
 
         private void DrawingCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
@@ -179,25 +175,45 @@ namespace headspace.Views
 
         private void DrawingCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
         {
-            if(!_isDrawing || _currentPoints.Count < 2 || ViewModel.ActiveLayer == null)
+            (sender as UIElement).ReleasePointerCapture(e.Pointer);
+
+            if(!_isDrawing ||  ViewModel.ActiveLayer == null)
             {
                 return;
             }
 
             _isDrawing = false;
 
-            var pointsToSave = _currentPoints.Select(p => new Vector2((float)p.X, (float)p.Y)).ToList();
+            CanvasGeometry geometry;
+            if(_currentPoints.Count == 1)
+            {
+                geometry = CanvasGeometry.CreateCircle(DrawingCanvas.Device, (float)_currentPoints[0].X, (float)_currentPoints[0].Y, ViewModel.StrokeThickness / 2);
+            } 
+            else
+            {
+                using(var pathBuilder = new CanvasPathBuilder(DrawingCanvas))
+                {
+                    pathBuilder.BeginFigure((float)_currentPoints[0].X, (float)_currentPoints[0].Y);
+                    for(int i = 1; i < _currentPoints.Count; i++)
+                    {
+                        pathBuilder.AddLine((float)_currentPoints[i].X, (float)_currentPoints[i].Y);
+                    }
+                    pathBuilder.EndFigure(CanvasFigureLoop.Open);
+
+                    geometry = CanvasGeometry.CreatePath(pathBuilder);
+                }
+            }
+
             var stroke = new StrokeData
             {
-                Points = pointsToSave,
+                CachedGeometry = geometry,
                 Color = _activeColor,
-                StrokeWidth = ViewModel.IsEraserMode ? 20.0f : ViewModel.StrokeThickness
+                StrokeWidth = ViewModel.StrokeThickness
             };
-
             ViewModel.ActiveLayer.Strokes.Add(stroke);
 
             _currentPoints.Clear();
-
+            
             DrawingCanvas.Invalidate();
         }
     }

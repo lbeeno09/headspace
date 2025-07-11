@@ -39,14 +39,15 @@
             </CommandBar>
             
             <!-- Drawing Area -->
-            <canvas:CanvasControl Grid.Row="1"
-                                  x:Name="StoryboardCanvas"
-                                  Background="White"
-                                  ClearColor="White"
-                                  Draw="StoryboardCanvas_Draw"
-                                  PointerPressed="StoryboardCanvas_PointerPressed"
-                                  PointerMoved="StoryboardCanvas_PointerMoved"
-                                  PointerReleased="StoryboardCanvas_PointerReleased" />
+            <Grid Grid.Row="1" Margin="24">
+                <canvas:CanvasControl x:Name="StoryboardCanvas"
+                                      Background="White"
+                                      ClearColor="White"
+                                      Draw="StoryboardCanvas_Draw"
+                                      PointerPressed="StoryboardCanvas_PointerPressed"
+                                      PointerMoved="StoryboardCanvas_PointerMoved"
+                                      PointerReleased="StoryboardCanvas_PointerReleased" />
+            </Grid>
 
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>

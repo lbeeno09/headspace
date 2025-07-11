@@ -28,13 +28,13 @@
 
         <!-- Markdown Editor -->
         <TextBox Grid.Column="1"
-                 Text="{x:Bind ViewModel.SelectedItem.Content, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                 Text="{x:Bind ViewModel.SelectedItem.Content, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=''}"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"
                  PlaceholderText="Select a note and start typing markdown..."
                  VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                  PreviewKeyDown="Editor_PreviewKeyDown"
-                 IsEnabled="{Binding ViewModel.SelectedItem, Converter={StaticResource NullToBooleanConverter}}"
+                 IsEnabled="{x:Bind ViewModel.IsItemSelected, Mode=OneWay}"
                  Margin="0,0,0,0"
                  Padding="8" />
 

@@ -33,7 +33,9 @@
                  PlaceholderText="Select a sheet and start typing abc notation..."
                  VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                  PreviewKeyDown="Editor_PreviewKeyDown"
-                 IsEnabled="{Binding ViewModel.SelectedItem, Converter={StaticResource NullToBooleanConverter}}" />
+                 IsEnabled="{Binding ViewModel.SelectedItem, Converter={StaticResource NullToBooleanConverter}}" 
+                 Margin="0,0,0,0"
+                 Padding="8" />
 
         <!-- Music Preview -->
         <Grid Grid.Column="2">
@@ -41,12 +43,13 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
+            
             <CommandBar Grid.Row="0" DefaultLabelPosition="Right">
                 <AppBarButton Icon="Play" Click="PlayButton_Click" />
                 <AppBarButton Icon="Stop" Click="StopButton_Click" />
             </CommandBar>
             
-            <WebView2  Grid.Row="1"
+            <WebView2 Grid.Row="1"
                        x:Name="MusicWebView"
                        HorizontalAlignment="Stretch"
                        VerticalAlignment="Stretch" />

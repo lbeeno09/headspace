@@ -36,14 +36,15 @@
             </CommandBar>
 
             <!-- Drawing Area -->
-            <canvas:CanvasControl x:Name="MoodboardCanvas"
-                                  Grid.Row="1"
-                                  Background="White"
-                                  Draw="MoodboardCanvas_Draw"
-                                  PointerPressed="MoodboardCanvas_PointerPressed"
-                                  PointerMoved="MoodboardCanvas_PointerMoved"
-                                  PointerReleased="MoodboardCanvas_PointerReleased" 
-                                  ClearColor="White"/>
+            <Grid Grid.Row="1" Margin="24">
+                <canvas:CanvasControl x:Name="MoodboardCanvas"
+                                      Background="White"
+                                      Draw="MoodboardCanvas_Draw"
+                                      PointerPressed="MoodboardCanvas_PointerPressed"
+                                      PointerMoved="MoodboardCanvas_PointerMoved"
+                                      PointerReleased="MoodboardCanvas_PointerReleased" 
+                                      ClearColor="White"/>
+            </Grid>
         </Grid>
     </Grid>
 </Page>

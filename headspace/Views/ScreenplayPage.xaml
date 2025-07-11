@@ -36,20 +36,35 @@
             </CommandBar>
 
             <!-- Rich Edit Box -->
-            <RichEditBox Grid.Row="1" 
-                         x:Name="ScreenplayEditor"
-                         FontFamily="Courier New"
-                         FontSize="12"
-                         Foreground="Black"
-                         Background="White"
-                         PreviewKeyDown="Editor_PreviewKeyDown">
-                <RichEditBox.Resources>
-                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="White" />
-                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="White" />
-                    <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="Black" />
-                    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="Black" />
-                </RichEditBox.Resources>
-            </RichEditBox>
+            <Grid Grid.Row="1" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+                <ScrollViewer>
+                    <StackPanel>
+                        <Grid Width="794"
+                              Height="1123"
+                              Background="White"
+                              Margin="24">
+                            <Grid.Shadow>
+                                <ThemeShadow />
+                            </Grid.Shadow>
+
+                            <RichEditBox x:Name="ScreenplayEditor"
+                                         Background="Transparent"
+                                         Foreground="Black"
+                                         FontFamily="Courier New"
+                                         FontSize="12"
+                                         Padding="48,24,48,24"
+                                         PreviewKeyDown="Editor_PreviewKeyDown">
+                                <RichEditBox.Resources>
+                                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="White" />
+                                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="White" />
+                                    <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="Black" />
+                                    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="Black" />
+                                </RichEditBox.Resources>
+                            </RichEditBox>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
         </Grid>
     </Grid>
 </Page>

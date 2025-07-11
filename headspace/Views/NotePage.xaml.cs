@@ -1,5 +1,7 @@
+using headspace.Models;
 using headspace.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -13,47 +15,54 @@ namespace headspace.Views
     public sealed partial class NotePage : Page
     {
         public NoteViewModel ViewModel { get; }
-        private bool _isWebViewReady = false;
+
+        private readonly Microsoft.UI.Dispatching.DispatcherQueueTimer _debounceTimer;
 
         public NotePage()
         {
             this.InitializeComponent();
 
             ViewModel = ((App)Application.Current).Services.GetRequiredService<NoteViewModel>();
-            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
             this.Loaded += (s, e) =>
             {
                 ViewModel.ViewXamlRoot = this.XamlRoot;
             };
 
-            NoteWebView.NavigationCompleted += NoteWebView_NavigationCompleted;
+            _debounceTimer = this.DispatcherQueue.CreateTimer();
+            _debounceTimer.Interval = TimeSpan.FromMilliseconds(500);
+            _debounceTimer.IsRepeating = false;
+            _debounceTimer.Tick += (s, e) => UpdatePreview();
+
+            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         }
-
-        private void NoteWebView_NavigationCompleted(WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
-        {
-            _isWebViewReady = true;
-
-            UpdatePreview();
-        }
-
 
         private async void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if(e.PropertyName is nameof(ViewModel.SelectedItem) or "SelectedItem.Content")
+            if(e.PropertyName == nameof(ViewModel.SelectedItem))
             {
+                if(ViewModel.SelectedItem != null)
+                {
+                    ViewModel.SelectedItem.PropertyChanged += SelectedItem_PropertyChanged;
+                }
+                UpdatePreview();
+            }
+        }
+
+        private void SelectedItem_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if(e.PropertyName == nameof(NoteModel.Content))
+            {
+                _debounceTimer.Stop();
+                _debounceTimer.Start();
+
                 UpdatePreview();
             }
         }
 
         private async void UpdatePreview()
         {
-            if(ViewModel.SelectedItem == null)
-            {
-                return;
-            }
-
             // 1. Get markdown string from model
-            var markdownText = ViewModel.SelectedItem.Content ?? string.Empty;
+            var markdownText = ViewModel.SelectedItem?.Content ?? string.Empty;
 
             // 2. Convert markdown to HTML with Markdig
             var htmlText = Markdig.Markdown.ToHtml(markdownText);

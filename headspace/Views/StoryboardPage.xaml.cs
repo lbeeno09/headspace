@@ -13,6 +13,7 @@ using System.Linq;
 using System.Numerics;
 using Windows.Foundation;
 using Windows.UI;
+using static QuestPDF.Fluent.ElementExtensions;
 
 namespace headspace.Views
 {
@@ -113,22 +114,18 @@ namespace headspace.Views
             }
 
             var properties = e.GetCurrentPoint(StoryboardCanvas).Properties;
-            if(properties.IsLeftButtonPressed)
-            {
-                _activeColor = ViewModel.IsEraserMode ? Colors.White : ViewModel.PrimaryColor;
-            }
-            else if(properties.IsRightButtonPressed)
-            {
-                _activeColor = ViewModel.IsEraserMode ? Colors.White : ViewModel.SecondaryColor;
-            }
-            else
+            if(!properties.IsLeftButtonPressed && !properties.IsRightButtonPressed)
             {
                 return;
             }
 
             _isDrawing = true;
+            _activeColor = properties.IsLeftButtonPressed ? ViewModel.PrimaryColor : ViewModel.SecondaryColor;
+
             _currentPoints.Clear();
             _currentPoints.Add(e.GetCurrentPoint(StoryboardCanvas).Position);
+
+            (sender as UIElement).CapturePointer(e.Pointer);
         }
 
         private void StoryboardCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
@@ -146,22 +143,41 @@ namespace headspace.Views
 
         private void StoryboardCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
         {
-            if(!_isDrawing || _currentPoints.Count < 2 || ViewModel.ActivePanel == null)
+            (sender as UIElement).ReleasePointerCapture(e.Pointer);
+
+            if(!_isDrawing || ViewModel.ActivePanel == null)
             {
                 return;
             }
 
             _isDrawing = false;
 
+            CanvasGeometry geometry;
+            if(_currentPoints.Count == 1)
+            {
+                geometry = CanvasGeometry.CreateCircle(StoryboardCanvas.Device, (float)_currentPoints[0].X, (float)_currentPoints[0].Y, ViewModel.StrokeThickness / 2);
+            }
+            else
+            {
+                using(var pathBuilder = new CanvasPathBuilder(StoryboardCanvas))
+                {
+                    pathBuilder.BeginFigure((float)_currentPoints[0].X, (float)_currentPoints[0].Y);
+                    for(int i = 1; i < _currentPoints.Count; i++)
+                    {
+                        pathBuilder.AddLine((float)_currentPoints[i].X, (float)_currentPoints[i].Y);
+                    }
+                    pathBuilder.EndFigure(CanvasFigureLoop.Open);
 
-            var pointsToSave = _currentPoints.Select(p => new Vector2((float)p.X, (float)p.Y)).ToList();
+                    geometry = CanvasGeometry.CreatePath(pathBuilder);
+                }
+            }
+
             var stroke = new StrokeData
             {
-                Points = pointsToSave,
+                CachedGeometry = geometry,
                 Color = _activeColor,
-                StrokeWidth = ViewModel.IsEraserMode ? 20.0f : ViewModel.StrokeThickness
+                StrokeWidth = ViewModel.StrokeThickness
             };
-
             ViewModel.ActivePanel.Strokes.Add(stroke);
 
             _currentPoints.Clear();

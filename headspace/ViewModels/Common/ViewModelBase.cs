@@ -12,8 +12,11 @@ namespace headspace.ViewModels.Common
         private ObservableCollection<T> _items = new();
 
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(ExportCommand))]
+        [NotifyPropertyChangedFor(nameof(IsItemSelected))]
         private T? _selectedItem;
 
+        public bool IsItemSelected => SelectedItem != null;
 
         [RelayCommand]
         protected abstract void Add();

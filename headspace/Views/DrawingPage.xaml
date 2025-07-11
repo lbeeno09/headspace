@@ -19,9 +19,9 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*" />
-            <ColumnDefinition Width="4*" />
-            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="1.5*" />
+            <ColumnDefinition Width="5*" />
+            <ColumnDefinition Width="1.5*" />
         </Grid.ColumnDefinitions>
 
         <!-- Drawing List -->
@@ -38,14 +38,15 @@
             </CommandBar>
                 
             <!-- Drawing Area -->
-            <canvas:CanvasControl x:Name="DrawingCanvas"
-                                  Grid.Row="1"
-                                  Background="White"
-                                  Draw="DrawingCanvas_Draw"
-                                  PointerPressed="DrawingCanvas_PointerPressed"
-                                  PointerMoved="DrawingCanvas_PointerMoved"
-                                  PointerReleased="DrawingCanvas_PointerReleased" 
-                                  ClearColor="White"/>
+            <Grid Grid.Row="1" Margin="24">
+                <canvas:CanvasControl x:Name="DrawingCanvas"
+                                      Background="White"
+                                      Draw="DrawingCanvas_Draw"
+                                      PointerPressed="DrawingCanvas_PointerPressed"
+                                      PointerMoved="DrawingCanvas_PointerMoved"
+                                      PointerReleased="DrawingCanvas_PointerReleased" 
+                                      ClearColor="White"/>
+            </Grid>
         </Grid>
 
         <Grid Grid.Column="2">
